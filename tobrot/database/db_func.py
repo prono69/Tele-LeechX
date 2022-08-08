@@ -52,7 +52,7 @@ class DatabaseManager:
                     if not ospath.exists(f'{DOWNLOAD_LOCATION}/thumbnails'):
                         makedirs(f'{DOWNLOAD_LOCATION}/thumbnails')
                     with open(path, 'wb+') as f:
-                        f.write(row[1])
+                        f.write(row[3])
                 if row[4]:
                     PRE_DICT[row[0]] = row[4]
                 if row[5]:
