@@ -2,6 +2,7 @@ from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
 from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER, user_specific_config
+from tobrot.plugins.custom_utils import PRE_DICT, CAP_DICT
 
 class DatabaseManager:
     def __init__(self):
@@ -27,7 +28,9 @@ class DatabaseManager:
                  uid bigint,
                  vid boolean DEFAULT FALSE,
                  doc boolean DEFAULT FALSE,
-                 thumb bytea DEFAULT NULL
+                 thumb bytea DEFAULT NULL,
+                 pre text DEFAULT "",
+                 cap text DEFAULT ""
               )
               """
         self.cur.execute(sql)
@@ -39,7 +42,7 @@ class DatabaseManager:
     def db_load(self):
         # User Data
         self.cur.execute("SELECT * FROM users")
-        rows = self.cur.fetchall()  # return a list ==> (uid, vid, doc, thumb)
+        rows = self.cur.fetchall()  # return a list ==> [(uid-0, vid-1, doc-2, thumb-3, pre-4, cap-5), ..]
         LOGGER.info(rows)
         if rows:
             for row in rows:
@@ -51,7 +54,11 @@ class DatabaseManager:
                         makedirs(f'{DOWNLOAD_LOCATION}/thumbnails')
                     with open(path, 'wb+') as f:
                         f.write(row[1])
-            LOGGER.info("Users Thumb data has been imported from Database")
+                if row[4]:
+                    PRE_DICT[row[0]] = row[4]
+                if row[5]:
+                    CAP_DICT[row[0]] = row[5]
+            LOGGER.info("[DB] User Data has been Imported from Database")
         self.disconnect()
 
     def user_save_thumb(self, user_id: int, path):
@@ -95,6 +102,28 @@ class DatabaseManager:
         else:
             sql = 'UPDATE users SET vid = FALSE, doc = TRUE WHERE uid = {}'.format(user_id)
         self.cur.execute(sql)
+        self.conn.commit()
+        self.disconnect()
+
+    def user_pre(self, user_id: int, user_pre):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (pre, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET pre = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_pre, user_id))
+        self.conn.commit()
+        self.disconnect()
+
+    def user_cap(self, user_id: int, user_cap):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (cap, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET cap = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_cap, user_id))
         self.conn.commit()
         self.disconnect()
 
