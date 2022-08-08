@@ -34,24 +34,34 @@ from tobrot import (
     UN_FINISHED_PROGRESS_STR,
     UPDATES_CHANNEL,
     CANCEL_COMMAND_G,
-    LOG_FILE_NAME
+    LOG_FILE_NAME,
+    DB_URI
     )
 # the logging things
 from tobrot.helper_funcs.display_progress import humanbytes
 from tobrot.helper_funcs.download_aria_p_n import aria_start
 from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.UserDynaConfig import UserDynaConfig
+from tobrot.database.db_func import DatabaseManager
 
 async def upload_as_doc(client, message):
-    user_specific_config[message.from_user.id]=UserDynaConfig(message.from_user.id,True)
+    uid = message.from_user.id
+    user_specific_config[uid] = True
+    if DB_URI:
+        DatabaseManager().user_doc(uid)
+        LOGGER.info("[DB] User Toggle DOC Settings Saved to Database")
     u_men = message.from_user.mention
-    await message.reply_text(f"┏━━ 🛠  𝗧𝗼𝗴𝗴𝗹𝗲 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀 :\n┣👤 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{message.from_user.id}\n┃\n┣🏷 𝐓𝐨𝐠𝐠𝐥𝐞 : 📁<code>Document 📂</code>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
+    await message.reply_text(f"┏━━ 🛠  𝗧𝗼𝗴𝗴𝗹𝗲 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀 :\n┣ 👤 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{message.from_user.id}\n┃\n┣🏷 𝐓𝐨𝐠𝐠𝐥𝐞 : 📁<code>Document 📂</code>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
 
 
 async def upload_as_video(client, message):
-    user_specific_config[message.from_user.id]=UserDynaConfig(message.from_user.id,False)
+    uid = message.from_user.id
+    user_specific_config[uid] = False
+    if DB_URI:
+        DatabaseManager().user_vid(uid)
+        LOGGER.info("[DB] User Toggle VID Settings Saved to Database")
     u_men = message.from_user.mention
-    await message.reply_text(f"┏━━ 🛠  𝗧𝗼𝗴𝗴𝗹𝗲 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀 :\n┣👤 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{message.from_user.id}\n┃\n┣🏷𝐓𝐨𝐠𝐠𝐥𝐞 : <code>🎞 Video 🎞</code>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
+    await message.reply_text(f"┏━━ 🛠  𝗧𝗼𝗴𝗴𝗹𝗲 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀 :\n┣ 👤 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{message.from_user.id}\n┃\n┣🏷𝐓𝐨𝐠𝐠𝐥𝐞 : <code>🎞 Video 🎞</code>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
  
 
 async def status_message_f(
