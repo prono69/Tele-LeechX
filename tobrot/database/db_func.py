@@ -1,9 +1,9 @@
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
-from tobrot import DOWNLOAD_LOCATION, DB_URI, AUTH_CHANNEL, SUDO_USERS, UPLOAD_AS_DOC, LOGGER
+from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER
 
-class DatabaseManger:
+class DatabaseManager:
     def __init__(self):
         self.err = False
         self.connect()
@@ -76,4 +76,4 @@ class DatabaseManger:
         return res
 
 if DB_URI is not None:
-    DatabaseManger().db_init()
+    DatabaseManager().db_init()

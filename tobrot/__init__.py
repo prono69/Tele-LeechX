@@ -228,6 +228,9 @@ FSUB_CHANNEL = getVar("FSUB_CHANNEL", "") #Do Not Put this Now
 # Quotes in Restart Message >>>>>>>>
 RDM_QUOTE = getVar("RDM_QUOTE", True)
 
+# Database Handler >>>>>>>>
+DB_URI = getVar("DATABASE_URL", "")
+
 BOT_START_TIME = time()
 
 gDict = defaultdict(lambda: [])
