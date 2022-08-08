@@ -39,7 +39,8 @@ class DatabaseManager:
     def db_load(self):
         # User Data
         self.cur.execute("SELECT * FROM users")
-        rows = self.cur.fetchall()  # return a list ==> (uid, thumb)
+        rows = self.cur.fetchall()  # return a list ==> (uid, vid, doc, thumb)
+        LOGGER.info(rows)
         if rows:
             for row in rows:
                 if row[2]:
