@@ -164,7 +164,7 @@ CANCEL_COMMAND_G = getVar("CANCEL_COMMAND_G", "cancel")
 STATUS_COMMAND = getVar("STATUS_COMMAND", "status")
 SAVE_THUMBNAIL = getVar("SAVE_THUMBNAIL", "savethumb")
 CLEAR_THUMBNAIL = getVar("CLEAR_THUMBNAIL", "clearthumb")
-UPLOAD_AS_DOC = getVar("UPLOAD_AS_DOC", "False")
+UPLOAD_AS_DOC = bool(getVar("UPLOAD_AS_DOC", False))
 LOG_COMMAND = getVar("LOG_COMMAND", "log")
 STATS_COMMAND = getVar("STATS_COMMAND", "stats")
 
