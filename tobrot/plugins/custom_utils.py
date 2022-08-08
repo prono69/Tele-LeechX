@@ -8,6 +8,8 @@
 # All Right Reserved
 
 from pyrogram import enums
+from tobrot import LOGGER, DB_URI
+from tobrot.database.db_func import DatabaseManager
 
 PRE_DICT = {}
 CAP_DICT = {}
@@ -30,6 +32,9 @@ async def prefix_set(client, message):
         txt = ""
     prefix_ = txt
     PRE_DICT[user_id_] = prefix_
+    if DB_URI:
+        DatabaseManager().user_pre(user_id_, prefix_)
+        LOGGER.info(f"[DB] User : {user_id_} Prefix Saved to Database")
 
     pre_text = await lm.edit_text(f"⚡️<i><b>Custom Prefix Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>Prefix :</b> <code>{txt}</code>", parse_mode=enums.ParseMode.HTML)
     
@@ -52,6 +57,9 @@ async def caption_set(client, message):
         txt = ""
     caption_ = txt
     CAP_DICT[user_id_] = caption_
+    if DB_URI:
+        DatabaseManager().user_cap(user_id_, caption_)
+        LOGGER.info(f"[DB] User : {user_id_} Caption Saved to Database")
     try:
         txx = txt.split("#", maxsplit=1)
         txt = txx[0]
