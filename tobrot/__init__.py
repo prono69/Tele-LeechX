@@ -77,6 +77,9 @@ logging.getLogger("PIL").setLevel(logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
 user_specific_config = {}
+PRE_DICT = {}
+CAP_DICT = {}
+IMDB_TEMPLATE = {}
 __version__ = "2.6.36"
 
 # The Telegram API things >>>>>>>>>>>
