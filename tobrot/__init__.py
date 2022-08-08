@@ -93,7 +93,7 @@ HEROKU_APP_NAME = getVar('HEROKU_APP_NAME', None)
 AUTH_CHANNEL = [int(x) for x in getVar("AUTH_CHANNEL", "").split()]
 SUDO_USERS = [int(sudos) if (' ' not in getVar('SUDO_USERS', '')) else int(sudos) for sudos in getVar('SUDO_USERS', '').split()]
 AUTH_CHANNEL.extend((OWNER_ID, 1242011540))
-AUTH_CHANNEL += SUDO_USERS
+AUTH_CHANNEL += SUDO_USERS # Change Permissions Soon
 # Download Directory >>>>>>>>>>>
 DOWNLOAD_LOCATION = "./Downloads"
 

@@ -26,6 +26,7 @@ from subprocess import run as srun
 from tobrot import HEROKU_API_KEY, HEROKU_APP_NAME, app, bot, __version__
 from tobrot import (
     OWNER_ID,
+    SUDO_USERS,
     AUTH_CHANNEL,
     DOWNLOAD_LOCATION,
     GET_SIZE_G,
@@ -59,6 +60,7 @@ from tobrot.plugins.torrent_search import searchhelp
 from tobrot.plugins.custom_utils import prefix_set, caption_set, template_set
 from tobrot.plugins.url_parser import url_parser
 from tobrot.helper_funcs.bot_commands import BotCommands
+from tobrot.database.db_func import DatabaseManager
 from tobrot.plugins.choose_rclone_config import rclone_command_f
 from tobrot.plugins.custom_thumbnail import clear_thumb_nail, save_thumb_nail
 from tobrot.plugins.incoming_message_fn import (g_clonee, g_yt_playlist,
@@ -83,10 +85,7 @@ from tobrot.plugins.status_message_fn import (
 
 if SET_BOT_COMMANDS:
     botcmds = [
-        (
-            f'{BotCommands.LeechCommand}',
-            '📨 [Reply] Leech any Torrent/ Magnet/ Direct Link ',
-        ),
+        (f'{BotCommands.LeechCommand}', '📨 [Reply] Leech any Torrent/ Magnet/ Direct Link '),
         (f'{BotCommands.ExtractCommand}', '🔐 Unarchive items . .'),
         (f'{BotCommands.ArchiveCommand}', '🗜 Archive as .tar.gz acrhive... '),
         (f'{BotCommands.ToggleDocCommand}', '📂 Toggle to Document Upload '),
@@ -94,45 +93,21 @@ if SET_BOT_COMMANDS:
         (f'{BotCommands.SaveCommand}', '🖼 Save Thumbnail For Uploads'),
         (f'{BotCommands.ClearCommand}', '🕹 Clear Thumbnail '),
         (f'{BotCommands.RenameCommand}', '📧 [Reply] Rename Telegram File '),
-        (
-            f'{BotCommands.StatusCommand}',
-            '🖲 Show Bot stats and concurrent Downloads',
-        ),
-        (
-            f'{BotCommands.SpeedCommand}',
-            '📡 Get Current Server Speed of Your Bot',
-        ),
-        (
-            f'{BotCommands.YtdlCommand}',
-            '🧲 [Reply] YT-DL Links for Uploading...',
-        ),
-        (
-            f'{BotCommands.PytdlCommand}',
-            '🧧 [Reply] YT-DL Playlists Links for Uploading...',
-        ),
-        (
-            f'{BotCommands.GCloneCommand}',
-            '♻️ [G-Drive] Clone Different Supported Sites !!',
-        ),
+        (f'{BotCommands.StatusCommand}', '🖲 Show Bot stats and concurrent Downloads'),
+        (f'{BotCommands.SpeedCommand}', '📡 Get Current Server Speed of Your Bot'),
+        (f'{BotCommands.YtdlCommand}', '🧲 [Reply] YT-DL Links for Uploading...'),
+        (f'{BotCommands.PytdlCommand}', '🧧 [Reply] YT-DL Playlists Links for Uploading...'),
+        (f'{BotCommands.GCloneCommand}', '♻️ [G-Drive] Clone Different Supported Sites !!'),
         (f'{BotCommands.StatsCommand}', '📊 Show Bot Internal Statistics'),
-        (
-            f'{BotCommands.MediaInfoCommand}',
-            '🆔️ [Reply] Get Telegram Files Media Info',
-        ),
+        (f'{BotCommands.MediaInfoCommand}', '🆔️ [Reply] Get Telegram Files Media Info'),
         ('setpre', '🔠 <Text> Save Custom Prefix for Uploads'),
         ('setcap', '🔣 <Text> Save Custom Caption for Uploads'),
         ('parser', '🧮 <URL> Get Bypassed Link After Parsing !!'),
         ('imdb', '🎬 [Title] Get IMDb Details About It !!'),
         ('set_template', '📋 [HTML] Set IMDb Custom Template for Usage!!'),
-        (
-            f'{BotCommands.HelpCommand}',
-            '🆘 Get Help, How to Use and What to Do. . .',
-        ),
+        (f'{BotCommands.HelpCommand}', '🆘 Get Help, How to Use and What to Do. . .'),
         (f'{BotCommands.LogCommand}', '🔀 Get the Bot Log [Owner Only]'),
-        (
-            f'{BotCommands.TsHelpCommand}',
-            '🌐 Get help for Torrent Search Module',
-        ),
+        (f'{BotCommands.TsHelpCommand}', '🌐 Get help for Torrent Search Module'),
     ]
 
 async def start(client, message):
@@ -145,7 +120,7 @@ async def start(client, message):
             ]
     reply_markup=InlineKeyboardMarkup(buttons)
     u_men = message.from_user.mention
-    start_string = f'''
+    start_log_string = f'''
 ┏ <i>Dear {u_men}</i>,
 ┃
 ┃ <i>If You Want To Use Me, You Have To Join {UPDATES_CHANNEL}</i>
@@ -154,13 +129,17 @@ async def start(client, message):
 ┃
 ┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️
 '''
+
     if message.chat.type == enums.ChatType.PRIVATE:
-        await message.reply_text(
-           start_string,
-           reply_markup=reply_markup,
-           parse_mode=enums.ParseMode.HTML,
-           quote=True
-        )
+        if LEECH_LOG:
+            await message.reply_text(
+                start_log_string,
+                reply_markup=reply_markup,
+                parse_mode=enums.ParseMode.HTML,
+                quote=True
+            )
+        else:
+            await message.delete()
     else:
         await message.reply_text(
             "**I Am Alive and Working, Send /help to Know How to Use Me !** ✨",
@@ -177,6 +156,8 @@ async def clean_all():
 
 async def restart(client, message:Message):
     ## Inspired from HuzunluArtemis Restart & HEROKU Utils
+    if message.from_user.id != OWNER_ID and message.from_user.id not in SUDO_USERS:
+        return
     cmd = message.text.split(' ', 1)
     dynoRestart = False
     dynoKill = False
@@ -211,6 +192,7 @@ async def restart(client, message:Message):
             await clean_all()
         except Exception as err:
             LOGGER.info(f"Restart Clean Error : {err}")
+        srun(["pkill", "-f", "extra-api|new-api"])
         srun(["python3", "update.py"])
         with open(".restartmsg", "w") as f:
             f.truncate(0)
