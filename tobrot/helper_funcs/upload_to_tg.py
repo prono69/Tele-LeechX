@@ -369,13 +369,9 @@ async def upload_single_file(
     thumbnail_location = os.path.join(
         DOWNLOAD_LOCATION, "thumbnails", str(from_user) + ".jpg"
     )
-    # LOGGER.info(thumbnail_location)
-    dyna_user_config_upload_as_doc = False
-    for key in iter(user_specific_config):
-        if key == from_user:
-            dyna_user_config_upload_as_doc=user_specific_config[key].upload_as_doc
-            LOGGER.info(f'Found Dyanamic Config for User : {from_user}')
-    
+
+    dyna_user_config_upload_as_doc = user_specific_config.get(from_user, False)
+        
     global PRM_LOG
     if isUserPremium and (not PRM_LOG) and LEECH_LOG:
         PRM_LOG = LEECH_LOG
@@ -389,7 +385,7 @@ async def upload_single_file(
         EXCEP_CHATS = AUTH_CHANNEL
         LOGGER.info("[IDLE] Switching AUTH_CHANNEL to EXCEP_CHATS")
 
-    if UPLOAD_AS_DOC.upper() == "TRUE" or dyna_user_config_upload_as_doc:
+    if UPLOAD_AS_DOC or dyna_user_config_upload_as_doc:
         thumb = None
         thumb_image_path = None
         if os.path.exists(thumbnail_location):
