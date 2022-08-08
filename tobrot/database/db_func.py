@@ -40,6 +40,7 @@ class DatabaseManager:
         rows = self.cur.fetchall()  # return a list ==> (uid, thumb)
         if rows:
             for row in rows:
+                path = f"{DOWNLOAD_LOCATION}/thumbnails/{row[0]}.jpg"
                 if row[1] is not None and not ospath.exists(path):
                     if not ospath.exists(f'{DOWNLOAD_LOCATION}/thumbnails'):
                         makedirs(f'{DOWNLOAD_LOCATION}/thumbnails')
