@@ -1,7 +1,7 @@
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
-from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER
+from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER, user_specific_config
 
 class DatabaseManager:
     def __init__(self):
@@ -25,6 +25,8 @@ class DatabaseManager:
             return
         sql = """CREATE TABLE IF NOT EXISTS users (
                  uid bigint,
+                 vid boolean DEFAULT FALSE,
+                 doc boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL
               )
               """
@@ -40,8 +42,10 @@ class DatabaseManager:
         rows = self.cur.fetchall()  # return a list ==> (uid, thumb)
         if rows:
             for row in rows:
+                if row[2]:
+                    user_specific_config[row[0]] = row[2]
                 path = f"{DOWNLOAD_LOCATION}/thumbnails/{row[0]}.jpg"
-                if row[1] is not None and not ospath.exists(path):
+                if row[3] is not None and not ospath.exists(path):
                     if not ospath.exists(f'{DOWNLOAD_LOCATION}/thumbnails'):
                         makedirs(f'{DOWNLOAD_LOCATION}/thumbnails')
                     with open(path, 'wb+') as f:
@@ -67,6 +71,28 @@ class DatabaseManager:
             return
         elif self.user_check(user_id):
             sql = 'UPDATE users SET thumb = NULL WHERE uid = {}'.format(user_id)
+        self.cur.execute(sql)
+        self.conn.commit()
+        self.disconnect()
+
+    def user_vid(self, user_id: int):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (uid, vid) VALUES ({}, TRUE)'.format(user_id)
+        else:
+            sql = 'UPDATE users SET vid = TRUE, doc = FALSE WHERE uid = {}'.format(user_id)
+        self.cur.execute(sql)
+        self.conn.commit()
+        self.disconnect()
+
+    def user_doc(self, user_id: int):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (uid, doc) VALUES ({}, TRUE)'.format(user_id)
+        else:
+            sql = 'UPDATE users SET vid = FALSE, doc = TRUE WHERE uid = {}'.format(user_id)
         self.cur.execute(sql)
         self.conn.commit()
         self.disconnect()
