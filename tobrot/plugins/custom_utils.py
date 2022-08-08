@@ -8,12 +8,8 @@
 # All Right Reserved
 
 from pyrogram import enums
-from tobrot import LOGGER, DB_URI
+from tobrot import LOGGER, DB_URI, PRE_DICT, CAP_DICT, IMDB_TEMPLATE
 from tobrot.database.db_func import DatabaseManager
-
-PRE_DICT = {}
-CAP_DICT = {}
-IMDB_TEMPLATE = {}
 
 async def prefix_set(client, message):
     '''  /setpre command '''
