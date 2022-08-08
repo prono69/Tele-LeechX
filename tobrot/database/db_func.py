@@ -61,6 +61,15 @@ class DatabaseManger:
         self.conn.commit()
         self.disconnect()
 
+    def user_rm_thumb(self, user_id: int, path):
+        if self.err:
+            return
+        elif self.user_check(user_id):
+            sql = 'UPDATE users SET thumb = NULL WHERE uid = {}'.format(user_id)
+        self.cur.execute(sql)
+        self.conn.commit()
+        self.disconnect()
+
     def user_check(self, uid: int):
         self.cur.execute("SELECT * FROM users WHERE uid = {}".format(uid))
         res = self.cur.fetchone()
