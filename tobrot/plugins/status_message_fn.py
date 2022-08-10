@@ -7,19 +7,20 @@
 # This is Part of < https://github.com/5MysterySD/Tele-LeechX >
 # All Right Reserved
 
-
-import asyncio
-import io
-import os
-import shutil
 import sys
-import time
-import traceback
-import psutil
-import math
+
+from math import floor
+from asyncio import sleep as asleep, subprocess, create_subprocess_shell
+from io import BytesIO, StringIO
+from os import path as opath, remove as oremove
+from shutil import disk_usage
+from time import time, sleep as tsleep
+from traceback import format_exc
+from psutil import virtual_memory, cpu_percent, net_io_counters
 
 from pyrogram.errors import FloodWait, MessageIdInvalid, MessageNotModified
 from pyrogram import enums
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 from tobrot.helper_funcs.admin_check import AdminCheck
 from tobrot import (
     AUTH_CHANNEL,
@@ -37,11 +38,11 @@ from tobrot import (
     LOG_FILE_NAME,
     DB_URI
     )
-# the logging things
 from tobrot.helper_funcs.display_progress import humanbytes
 from tobrot.helper_funcs.download_aria_p_n import aria_start
 from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.database.db_func import DatabaseManager
+from tobrot.bot_theme.themes import BotTheme
 
 async def upload_as_doc(client, message):
     uid = message.from_user.id
@@ -49,8 +50,11 @@ async def upload_as_doc(client, message):
     if DB_URI:
         DatabaseManager().user_doc(uid)
         LOGGER.info("[DB] User Toggle DOC Settings Saved to Database")
-    u_men = message.from_user.mention
-    await message.reply_text(f"┏━━ 🛠  𝗧𝗼𝗴𝗴𝗹𝗲 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀 :\n┣ 👤 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{message.from_user.id}\n┃\n┣🏷 𝐓𝐨𝐠𝐠𝐥𝐞 : 📁<code>Document 📂</code>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
+    await message.reply_text(((BotTheme()).TOGGLEDOC_MSG).format(
+        u_men = message.from_user.mention,
+        u_id = uid,
+        UPDATES_CHANNEL = UPDATES_CHANNEL
+    ))
 
 async def upload_as_video(client, message):
     uid = message.from_user.id
@@ -58,15 +62,49 @@ async def upload_as_video(client, message):
     if DB_URI:
         DatabaseManager().user_vid(uid)
         LOGGER.info("[DB] User Toggle VID Settings Saved to Database")
-    u_men = message.from_user.mention
-    await message.reply_text(f"┏━━ 🛠  𝗧𝗼𝗴𝗴𝗹𝗲 𝗦𝗲𝘁𝘁𝗶𝗻𝗴𝘀 :\n┣ 👤 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{message.from_user.id}\n┃\n┣🏷𝐓𝐨𝐠𝐠𝐥𝐞 : <code>🎞 Video 🎞</code>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
- 
+    await message.reply_text(((BotTheme()).TOGGLEVID_MSG).format(
+        u_men = message.from_user.mention,
+        u_id = uid,
+        UPDATES_CHANNEL = UPDATES_CHANNEL
+    ))
 
-async def status_message_f(
-    client, message
-):  # weird code but 'This is the way' @gautamajay52
+def progress_bar(percentage):
+    p_used = '●'
+    p_total = '○'
+    if isinstance(percentage, str):
+        return ''
+    try:
+        percentage=int(percentage)
+    except:
+        percentage = 0
+    return ''.join(
+        p_used if i <= percentage // 10 else p_total for i in range(0, 10)
+    )
+
+def bot_button_stats():
+    hr, mi, se = up_time(time() - BOT_START_TIME)
+    total, used, free = disk_usage(".")
+    ram = virtual_memory().percent
+    cpu = cpu_percent()
+    total = humanbytes(total)
+    used = humanbytes(used)
+    free = humanbytes(free)
+    used_percent = (int(float(used[:-3])) / int(float(total[:-3]))) * 100
+    sent = humanbytes(net_io_counters().bytes_sent)
+    recv = humanbytes(net_io_counters().bytes_recv)
+    stats = f'''
+┏━━━━ 𝗕𝗼𝘁 𝗦𝘁𝗮𝘁𝘀 ━━━━━╻
+┃ ᑕᑭᑌ: {progress_bar(cpu)} {cpu}% 
+┃ ᖇᗩᗰ: {progress_bar(ram)} {ram}%  
+┃ T-ᗪᒪ: {sent} ┃ T-ᑌᒪ: {recv}
+┃ ᑌᑭ : {hr}h {mi}m {se}s
+┃ T: {total} ┃ ᖴ: {free}
+┃ ᗪIՏK: {progress_bar(used_percent)} {int(used_percent)}%
+┗━━━━━━━━━━━━━━━━╹'''
+    return stats
+
+async def status_message_f(client, message):
     aria_i_p = await aria_start()
-    # Show All Downloads
     to_edit = await message.reply("🧭 𝐆𝐞𝐭𝐭𝐢𝐧𝐠 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 𝐒𝐭𝐚𝐭𝐮𝐬 . .")
     chat_id = int(message.chat.id)
     mess_id = int(to_edit.id)
@@ -78,7 +116,7 @@ async def status_message_f(
             gid_dict[chat_id].pop()
             gid_dict[chat_id].append(mess_id)
 
-    prev_mess = "By gautamajay52"
+    prev_mess = "FXTorrentz"
     await message.delete()
     while True:
         downloads = aria_i_p.get_downloads()
@@ -89,27 +127,14 @@ async def status_message_f(
                 downloading_dir_name = str(file.name)
             except:
                 pass
-            if file.status == "active":
-                is_file = file.seeder
-                if is_file is None:
-                    msgg = f"┣🔰𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
-                else:
-                    msgg = f"┣🔰𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
-
                 percentage = int(file.progress_string(0).split('%')[0])
                 prog = "[{0}{1}]".format(
                     "".join(
-                        [
-                            FINISHED_PROGRESS_STR
-                            for _ in range(math.floor(percentage / 5))
-                        ]
+                        [FINISHED_PROGRESS_STR for _ in range(floor(percentage / 5))]
                     ),
                     "".join(
-                        [
-                            UN_FINISHED_PROGRESS_STR
-                            for _ in range(20 - math.floor(percentage / 5))
-                        ]
-                    ),
+                        [UN_FINISHED_PROGRESS_STR for _ in range(10 - floor(percentage / 5))]
+                    )
                 )
 
                 msg += f"\n┏━━━━━━━━━━━━━━━━╻"
@@ -122,40 +147,37 @@ async def status_message_f(
                 #umen = f'<a href="tg://user?id={file.message.from_user.id}">{file.message.from_user.first_name}</a>'
                 #msg += f"\n<b>👤User:</b> {umen} (<code>{file.message.from_user.id}</code>)"
                 #msg += f"\n<b>⚠️Warn:</b> <code>/warn {file.message.from_user.id}</code>"
-                msg += f"\n{msgg}"
+                if file.status == "active":
+                    is_file = file.seeder
+                    if is_file is None:
+                        msg += f"\n┣🔰𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
+                    else:
+                        msg += f"\n┣🔰𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
                 msg += f"\n┣🔰𝐂𝐚𝐧𝐜𝐞𝐥: <code>/{CANCEL_COMMAND_G} {file.gid}</code>"
-                msg += f"\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹\n"
+                msg += f"\n┗━━━━━━━━━━━━━━━━╹\n"
 
-        hr, mi, se = up_time(time.time() - BOT_START_TIME)
-        total, used, free = shutil.disk_usage(".")
-        ram = psutil.virtual_memory().percent
-        cpu = psutil.cpu_percent()
-        total = humanbytes(total)
-        used = humanbytes(used)
-        free = humanbytes(free)
-
-        ms_g = (
-            f"◆━━━━━━◆ ❃ ◆━━━━━━◆\n"
-            f"┏━━━━━━━━━━━━━━┓\n"
-            f"┃ᑕᑭᑌ: <code>{cpu}%</code> ┃ ᖇᗩᗰ: <code>{ram}%</code>  ┃\n"
-            f"┃ᖴ: <code>{free}</code> ┃ᑌᑭ: <code>{hr}h{mi}m{se}s</code>┃\n"
-            f"┃T: <code>{total}</code> ┃ᑌ: <code>{used}</code>┃\n"
-            f"┗━━━━━━━━━━━━━━┛"
-        )
-
+        ms_g = f"◆━━━━━━◆ ❃ ◆━━━━━━◆"
+        if UPDATES_CHANNEL:
+            ms_g += f"\n♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
         umen = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-        mssg = f"\n❣𝙎𝙩𝙖𝙩𝙪𝙨 𝙍𝙚𝙦𝙪𝙚𝙨𝙩𝙚𝙙 𝘽𝙮 : {umen} (<code>{message.from_user.id}</code>)\n◆━━━━━━◆ ❃ ◆━━━━━━◆"
+        mssg = f"\n❣𝙎𝙩𝙖𝙩𝙪𝙨 : {umen} (<code>{message.from_user.id}</code>)\n◆━━━━━━◆ ❃ ◆━━━━━━◆"
+        
+        button_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton('Sᴛᴀᴛs\nCʜᴇᴄᴋ', callback_data="stats"),
+             InlineKeyboardButton('Cʟᴏsᴇ', callback_data="admin_close")]
+        ])
+
         if msg == "":
-            msg = f"\n┏━━━━━━━━━━━━━━━╻\n┃\n┃ ⚠️ <b>No Active, Queued or Paused \n┃ Torrents / Direct Links ⚠️</b>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹\n"
+            msg = f"\n┏━━━━━━━━━━━━━━━╻\n┃\n┃ ⚠️ <b>No Active, Queued or Paused \n┃ Torrents / Direct Links ⚠️</b>\n┃\n┗━━━━━━━━━━━━━━━╹\n"
             msg = mssg + "\n" + msg + "\n" + ms_g
-            await to_edit.edit(msg)
-            await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
+            await to_edit.edit(msg, reply_markup=button_markup)
+            await asleep(EDIT_SLEEP_TIME_OUT)
             await to_edit.delete()
             break
         msg = mssg + "\n" + msg + "\n" + ms_g
-        if len(msg) > MAX_MESSAGE_LENGTH:  # todo - will catch later
-            with io.BytesIO(str.encode(msg)) as out_file:
-                out_file.name = "status.text"
+        if len(msg) > MAX_MESSAGE_LENGTH:
+            with BytesIO(str.encode(msg)) as out_file:
+                out_file.name = "fxstatus.txt"
                 await client.send_document(
                     chat_id=message.chat.id,
                     document=out_file,
@@ -164,16 +186,16 @@ async def status_message_f(
         else:
             if msg != prev_mess:
                 try:
-                    await to_edit.edit(msg, parse_mode=enums.ParseMode.HTML)
+                    await to_edit.edit(msg, parse_mode=enums.ParseMode.HTML, reply_markup=button_markup)
                 except MessageIdInvalid as df:
                     break
                 except MessageNotModified as ep:
                     LOGGER.info(ep)
-                    await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
+                    await asleep(EDIT_SLEEP_TIME_OUT)
                 except FloodWait as e:
                     LOGGER.info(f"FloodWait : Sleeping {e.value}s")
-                    time.sleep(e.value)
-                await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
+                    tsleep(e.value)
+                await asleep(EDIT_SLEEP_TIME_OUT)
                 prev_mess = msg
 
 
@@ -213,9 +235,9 @@ async def exec_message_f(client, message):
     if message.reply_to_message:
         reply_to_id = message.reply_to_message.id
 
-    start_time = time.time() + PROCESS_RUN_TIME
-    process = await asyncio.create_subprocess_shell(
-        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    start_time = time() + PROCESS_RUN_TIME
+    process = await create_subprocess_shell(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     stdout, stderr = await process.communicate()
     e = stderr.decode()
@@ -231,7 +253,7 @@ async def exec_message_f(client, message):
     await work_in.delete()
 
     if len(OUTPUT) > MAX_MESSAGE_LENGTH:
-        with io.BytesIO(str.encode(OUTPUT)) as out_file:
+        with BytesIO(str.encode(OUTPUT)) as out_file:
             out_file.name = "shell.txt"
             await client.send_document(
                 chat_id=message.chat.id,
@@ -268,14 +290,14 @@ async def eval_message_f(client, message):
 
     old_stderr = sys.stderr
     old_stdout = sys.stdout
-    redirected_output = sys.stdout = io.StringIO()
-    redirected_error = sys.stderr = io.StringIO()
+    redirected_output = sys.stdout = StringIO()
+    redirected_error = sys.stderr = StringIO()
     stdout, stderr, exc = None, None, None
 
     try:
         await aexec(cmd, client, message)
     except Exception:
-        exc = traceback.format_exc()
+        exc = format_exc()
 
     stdout = redirected_output.getvalue()
     stderr = redirected_error.getvalue()
@@ -304,7 +326,7 @@ async def eval_message_f(client, message):
             disable_notification=True,
             reply_to_message_id=reply_to_id,
         )
-        os.remove("eval.text")
+        oremove("eval.text")
         await status_message.delete()
     else:
         await status_message.edit(final_output)
@@ -330,7 +352,7 @@ def up_time(time_taken):
 async def upload_log_file(client, message):
     ## No Kanged From Anywhere, Programmed By 5MysterySD >>>>>>>>
     logFile = await AdminCheck(client, message.chat.id, message.from_user.id)
-    if logFile and os.path.exists(LOG_FILE_NAME):
+    if logFile and opath.exists(LOG_FILE_NAME):
         logFileRead = open(LOG_FILE_NAME, "r")
         LOGGER.info("Generating LOG Display...")
         logFileLines = logFileRead.read().splitlines()
@@ -348,6 +370,6 @@ async def upload_log_file(client, message):
         except Exception as err:
             LOGGER.info(f"Error Log Display : {err}")
             LOGGER.info(textLog)
-        h, m, s = up_time(time.time() - BOT_START_TIME)
+        h, m, s = up_time(time() - BOT_START_TIME)
         await message.reply_document(LOG_FILE_NAME, caption=f"**Full Log**\n\n**Bot Uptime:** `{h}h, {m}m, {s}s`")
 

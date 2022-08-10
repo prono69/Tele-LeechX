@@ -79,11 +79,9 @@ async def template_set(client, message):
         txt = reply_to.text
     else:
         txt = ""
-    if txt == "":
-        await lm.edit_text("`Send Custom TEMPLATE for your Usage`")
-        return
-    else:
-        template_ = txt
-        IMDB_TEMPLATE[user_id_] = template_
-    
-        await lm.edit_text(f"⚡️<i><b>Custom Template Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>IMDB Template :</b> \n<code>{txt}</code>", parse_mode=enums.ParseMode.HTML)
+    template_ = txt
+    IMDB_TEMPLATE[user_id_] = template_
+    if DB_URI:
+        DatabaseManager().user_imdb(user_id_, template_)
+        LOGGER.info(f"[DB] User : {user_id_} IMDB Template Saved to Database")
+    await lm.edit_text(f"⚡️<i><b>Custom Template Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>IMDB Template :</b> \n<code>{txt}</code>", parse_mode=enums.ParseMode.HTML)

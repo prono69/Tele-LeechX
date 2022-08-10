@@ -1,7 +1,7 @@
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
-from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER, user_specific_config, PRE_DICT, CAP_DICT
+from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER, user_specific_config, PRE_DICT, CAP_DICT, IMDB_TEMPLATE
 
 class DatabaseManager:
     def __init__(self):
@@ -13,7 +13,7 @@ class DatabaseManager:
             self.conn = connect(DB_URI)
             self.cur = self.conn.cursor()
         except DatabaseError as error:
-            LOGGER.error(f"Error in DB connection: {error}")
+            LOGGER.error(f"Error in PostgreSQL DB : {error}")
             self.err = True
 
     def disconnect(self):
@@ -29,20 +29,19 @@ class DatabaseManager:
                  doc boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
                  pre text DEFAULT '',
-                 cap text DEFAULT ''
+                 cap text DEFAULT '',
+                 imdb text DEFAULT ''
               )
               """
         self.cur.execute(sql)
-        #self.cur.execute("CREATE TABLE IF NOT EXISTS {} (cid bigint, link text, tag text)".format(botname))
         self.conn.commit()
-        LOGGER.info("Database Initiated")
+        LOGGER.info("[DB] Database Initiated")
         self.db_load()
 
     def db_load(self):
         # User Data
         self.cur.execute("SELECT * FROM users")
-        rows = self.cur.fetchall()  # return a list ==> [(uid-0, vid-1, doc-2, thumb-3, pre-4, cap-5), ..]
-        LOGGER.info(rows)
+        rows = self.cur.fetchall()  # return a list ==> [(uid-0, vid-1, doc-2, thumb-3, pre-4, cap-5, imdb-6), ..]
         if rows:
             for row in rows:
                 if row[2]:
@@ -57,6 +56,8 @@ class DatabaseManager:
                     PRE_DICT[row[0]] = row[4]
                 if row[5]:
                     CAP_DICT[row[0]] = row[5]
+                if row[6]:
+                    IMDB_TEMPLATE[row[0]] = row[6]
             LOGGER.info("[DB] User Data has been Imported from Database")
         self.disconnect()
 
@@ -123,6 +124,17 @@ class DatabaseManager:
         else:
             sql = 'UPDATE users SET cap = %s WHERE uid = %s'
         self.cur.execute(sql, (user_cap, user_id))
+        self.conn.commit()
+        self.disconnect()
+
+    def user_imdb(self, user_id: int, user_imdb):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (imdb, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET imdb = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_imdb, user_id))
         self.conn.commit()
         self.disconnect()
 

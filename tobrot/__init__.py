@@ -205,7 +205,16 @@ STRING_SESSION = getVar("STRING_SESSION", "")
 #Bot Command [IMDB]  >>>>>>>>>>>
 CUSTOM_CAPTION = getVar("CUSTOM_CAPTION", "")
 MAX_LIST_ELM = getVar("MAX_LIST_ELM", None)
-DEF_IMDB_TEMPLATE = getVar("IMDB_TEMPLATE", "")
+DEF_IMDB_TEMPLATE = getVar("IMDB_TEMPLATE", '''<b>Title: </b> {title} [{year}]
+<b>Also Known As:</b> {aka}
+<b>Rating ⭐️:</b> <i>{rating}</i>
+<b>Release Info: </b> <a href=f'{url_releaseinfo}'>{release_date}</a>
+<b>Genre: </b>{genres}
+<b>IMDb URL:</b> {url}
+<b>Language: </b>{languages}
+<b>Country of Origin : </b> {countries}
+
+<b>Story Line: </b><code>{plot}</code>''')
 
 #Telegraph Creds  >>>>>>>>>>>
 TGH_AUTHOR = getVar("TGH_AUTHOR ", "Tele-LeechX")
@@ -223,7 +232,7 @@ PRM_USERS = getVar("PRM_USERS", "") #Optional
 PRM_LOG = getVar("PRM_LOG", "") #Optional 
 
 # Bot Theme [ UI & Customization ] >>>>>>>>
-BOT_THEME = getVar("BOT_THEME", "fx-optimised")
+BOT_THEME = getVar("BOT_THEME", "fx-optimised-theme")
 
 # ForceSubscribe [ Channel ] >>>>>>>>
 FSUB_CHANNEL = getVar("FSUB_CHANNEL", "") #Do Not Put this Now
