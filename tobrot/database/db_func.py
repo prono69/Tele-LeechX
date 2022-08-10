@@ -130,6 +130,3 @@ class DatabaseManager:
         self.cur.execute("SELECT * FROM users WHERE uid = {}".format(uid))
         res = self.cur.fetchone()
         return res
-
-if DB_URI is not None:
-    DatabaseManager().db_init()
