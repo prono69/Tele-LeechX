@@ -50,7 +50,7 @@ async def upload_as_doc(client, message):
     if DB_URI:
         DatabaseManager().user_doc(uid)
         LOGGER.info("[DB] User Toggle DOC Settings Saved to Database")
-    await message.reply_text(((BotTheme()).TOGGLEDOC_MSG).format(
+    await message.reply_text(((BotTheme(uid)).TOGGLEDOC_MSG).format(
         u_men = message.from_user.mention,
         u_id = uid,
         UPDATES_CHANNEL = UPDATES_CHANNEL
@@ -62,7 +62,7 @@ async def upload_as_video(client, message):
     if DB_URI:
         DatabaseManager().user_vid(uid)
         LOGGER.info("[DB] User Toggle VID Settings Saved to Database")
-    await message.reply_text(((BotTheme()).TOGGLEVID_MSG).format(
+    await message.reply_text(((BotTheme(uid)).TOGGLEVID_MSG).format(
         u_men = message.from_user.mention,
         u_id = uid,
         UPDATES_CHANNEL = UPDATES_CHANNEL
@@ -120,6 +120,7 @@ async def status_message_f(client, message):
     await message.delete()
     while True:
         downloads = aria_i_p.get_downloads()
+        LOGGER.info(downloads)
         msg = ""
         for file in downloads:
             downloading_dir_name = "N/A"
@@ -127,17 +128,18 @@ async def status_message_f(client, message):
                 downloading_dir_name = str(file.name)
             except:
                 pass
+            if file.status == "active":
                 percentage = int(file.progress_string(0).split('%')[0])
                 prog = "[{0}{1}]".format(
                     "".join(
                         [FINISHED_PROGRESS_STR for _ in range(floor(percentage / 5))]
                     ),
                     "".join(
-                        [UN_FINISHED_PROGRESS_STR for _ in range(10 - floor(percentage / 5))]
+                        [UN_FINISHED_PROGRESS_STR for _ in range(20 - floor(percentage / 5))]
                     )
                 )
 
-                msg += f"\n┏━━━━━━━━━━━━━━━━╻"
+                msg += f"\n┏━━━━━━━━━━━━━━━━━━╻"
                 msg += f"\n┣🔰𝐍𝐚𝐦𝐞: <code>{downloading_dir_name}</code>"
                 msg += f"\n┣🔰𝐒𝐭𝐚𝐭𝐮𝐬: <i>Downloading...📥</i>"
                 msg += f"\n┃<code>{prog}</code>"
@@ -147,20 +149,19 @@ async def status_message_f(client, message):
                 #umen = f'<a href="tg://user?id={file.message.from_user.id}">{file.message.from_user.first_name}</a>'
                 #msg += f"\n<b>👤User:</b> {umen} (<code>{file.message.from_user.id}</code>)"
                 #msg += f"\n<b>⚠️Warn:</b> <code>/warn {file.message.from_user.id}</code>"
-                if file.status == "active":
-                    is_file = file.seeder
-                    if is_file is None:
-                        msg += f"\n┣🔰𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
-                    else:
-                        msg += f"\n┣🔰𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
+                is_file = file.seeder
+                if is_file is None:
+                    msg += f"\n┣🔰𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
+                else:
+                    msg += f"\n┣🔰𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
                 msg += f"\n┣🔰𝐂𝐚𝐧𝐜𝐞𝐥: <code>/{CANCEL_COMMAND_G} {file.gid}</code>"
-                msg += f"\n┗━━━━━━━━━━━━━━━━╹\n"
+                msg += f"\n┗━━━━━━━━━━━━━━━━━━╹\n"
 
-        ms_g = f"◆━━━━━━◆ ❃ ◆━━━━━━◆"
+        ms_g = f"◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
         if UPDATES_CHANNEL:
             ms_g += f"\n♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
         umen = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-        mssg = f"\n❣𝙎𝙩𝙖𝙩𝙪𝙨 : {umen} (<code>{message.from_user.id}</code>)\n◆━━━━━━◆ ❃ ◆━━━━━━◆"
+        mssg = f"\n❣𝙎𝙩𝙖𝙩𝙪𝙨 : {umen} (<code>{message.from_user.id}</code>)\n◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
         
         button_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton('Sᴛᴀᴛs\nCʜᴇᴄᴋ', callback_data="stats"),

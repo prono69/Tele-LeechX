@@ -111,25 +111,27 @@ async def mediainfo(client, message):
     out = output_[0] if len(output_) != 0 else None
     if DIRECT_LINK:
         out = out.replace("\n", "<br>")
-    body_text = f"""
+    if out:
+        body_text = f"""
 <h2>DETAILS</h2>
-<pre>{out or 'Not Supported'}</pre>
+<pre>{out}</pre>
 """
-    LOGGER.info(out)
+    else:
+        await process.edit_text("The requested URL was not found on this server. That’s all we know.")
+        return
     title = unquote(link.split('/')[-1]) if DIRECT_LINK else "FX Mediainfo"
     tgh_link = post_to_telegraph_html(title, body_text)
 
     if TG_MEDIA:
         text_ = str(media_type.split(".")[-1])
-        LOGGER.info(text_)
         textup = f'''
 ℹ️ <code>MEDIA INFO</code> ℹ
 ┃
-┃• <b>File Name :</b> <code>{x_media['file_name']}</code>
-┃• <b>Mime Type :</b> <code>{x_media['mime_type']}</code>
-┃• <b>File Size :</b> <code>{humanbytes(x_media['file_size'])}</code>
-┃• <b>Date :</b> <code>{datetime.datetime.utcfromtimestamp(x_media['date']).strftime('%I:%M:%S %p %d %B, %Y')}</code>
-┃• <b>File ID :</b> <code>{x_media['file_id']}</code>
+┃• <b>File Name :</b> <code>{x_media.file_name}</code>
+┃• <b>Mime Type :</b> <code>{x_media.mime_type}</code>
+┃• <b>File Size :</b> <code>{humanbytes(x_media.file_size)}</code>
+┃• <b>Date :</b> <code>{x_media.date}</code>
+┃• <b>File ID :</b> <code>{x_media.file_id}</code>
 ┃• <b>Media Type :</b> <code>{text_}</code>
 ┃
 ┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹

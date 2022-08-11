@@ -80,6 +80,8 @@ user_specific_config = {}
 PRE_DICT = {}
 CAP_DICT = {}
 IMDB_TEMPLATE = {}
+USER_THEMES = {}
+AVAILABLE_THEMES = {}
 __version__ = "2.7.0"
 
 # The Telegram API things >>>>>>>>>>>
@@ -208,13 +210,15 @@ MAX_LIST_ELM = getVar("MAX_LIST_ELM", None)
 DEF_IMDB_TEMPLATE = getVar("IMDB_TEMPLATE", '''<b>Title: </b> {title} [{year}]
 <b>Also Known As:</b> {aka}
 <b>Rating ⭐️:</b> <i>{rating}</i>
-<b>Release Info: </b> <a href=f'{url_releaseinfo}'>{release_date}</a>
+<b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
 <b>Genre: </b>{genres}
 <b>IMDb URL:</b> {url}
 <b>Language: </b>{languages}
 <b>Country of Origin : </b> {countries}
 
-<b>Story Line: </b><code>{plot}</code>''')
+<b>Story Line: </b><code>{plot}</code>
+
+<a href="{url_cast}">Read More ...</a>''')
 
 #Telegraph Creds  >>>>>>>>>>>
 TGH_AUTHOR = getVar("TGH_AUTHOR ", "Tele-LeechX")

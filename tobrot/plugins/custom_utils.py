@@ -8,6 +8,8 @@
 # All Right Reserved
 
 from pyrogram import enums
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
+
 from tobrot import LOGGER, DB_URI, PRE_DICT, CAP_DICT, IMDB_TEMPLATE
 from tobrot.database.db_func import DatabaseManager
 
@@ -85,3 +87,20 @@ async def template_set(client, message):
         DatabaseManager().user_imdb(user_id_, template_)
         LOGGER.info(f"[DB] User : {user_id_} IMDB Template Saved to Database")
     await lm.edit_text(f"⚡️<i><b>Custom Template Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>IMDB Template :</b> \n<code>{txt}</code>", parse_mode=enums.ParseMode.HTML)
+
+async def theme_set(client, message):
+    '''  /choosetheme command '''
+    lk = await message.reply_text(
+        text="`Fetching Current Themes ...`",
+    )
+    user_id_ = message.from_user.id 
+    u_men = message.from_user.mention
+
+    theme_btn = InlineKeyboardMarkup([
+        [InlineKeyboardButton("fx-optimised-theme", callback_data = f"theme {user_id_} fx-optimised-theme")],
+        [InlineKeyboardButton("fx-minimal-theme", callback_data = f"theme {user_id_} fx-minimal-theme")],
+        [InlineKeyboardButton("fx-random-theme", callback_data = f"theme {user_id_} fx-random-theme")],
+        [InlineKeyboardButton("⛔️ Close ⛔️", callback_data = f"close")],
+    ])
+
+    await lk.edit_text(f"⚡️ <i><b>Available Custom Themes</b></i> ⚡️\n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n\n🗄 <b>Choose Available Theme from Below:</b>", parse_mode=enums.ParseMode.HTML, reply_markup=theme_btn)

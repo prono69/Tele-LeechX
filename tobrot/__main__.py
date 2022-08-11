@@ -58,7 +58,7 @@ from tobrot.plugins.index_scrape import index_scrape
 from tobrot.plugins.call_back_button_handler import button
 from tobrot.plugins.imdb import imdb_search
 from tobrot.plugins.torrent_search import searchhelp
-from tobrot.plugins.custom_utils import prefix_set, caption_set, template_set
+from tobrot.plugins.custom_utils import prefix_set, caption_set, template_set, theme_set
 from tobrot.plugins.url_parser import url_parser
 from tobrot.helper_funcs.bot_commands import BotCommands
 from tobrot.database.db_func import DatabaseManager
@@ -106,6 +106,7 @@ if SET_BOT_COMMANDS:
         ('parser', '🧮 <URL> Get Bypassed Link After Parsing !!'),
         ('imdb', '🎬 [Title] Get IMDb Details About It !!'),
         ('set_template', '📋 [HTML] Set IMDb Custom Template for Usage!!'),
+        ('choosetheme', '🗄 Set Custom Bot Theme for Usage for Own Decorative Purposes !!'),
         (f'{BotCommands.HelpCommand}', '🆘 Get Help, How to Use and What to Do. . .'),
         (f'{BotCommands.LogCommand}', '🔀 Get the Bot Log [Owner Only]'),
         (f'{BotCommands.TsHelpCommand}', '🌐 Get help for Torrent Search Module'),
@@ -472,6 +473,14 @@ if __name__ == "__main__":
         & filters.chat(chats=AUTH_CHANNEL),
     )
     app.add_handler(ind_scrape_handler)
+    ##############################################################################
+    user_theme_handler = MessageHandler(
+        theme_set,
+        filters=filters.command([f"choosetheme", f"choosetheme@{bot.username}"])
+        & filters.chat(chats=AUTH_CHANNEL),
+    )
+    app.add_handler(user_theme_handler)
+
     logging.info(r'''
 ________    ______           ______                 ______ ____  __
 ___  __/_______  /____       ___  / ___________________  /___  |/ /

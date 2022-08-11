@@ -156,11 +156,11 @@ def TimeFormatter(milliseconds: int) -> str:
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
     tmp = (
-        (f"{str(days)}d, " if days else "")
-        + (f"{str(hours)}h, " if hours else "")
-        + (f"{str(minutes)}m, " if minutes else "")
-        + (f"{str(seconds)}s, " if seconds else "")
-        + (f"{str(milliseconds)}ms, " if milliseconds else "")
+        (f"{int(days)}d, " if days else "")
+        + (f"{int(hours)}h, " if hours else "")
+        + (f"{int(minutes)}m, " if minutes else "")
+        + (f"{int(seconds)}s, " if seconds else "")
+        + (f"{int(milliseconds)}ms, " if milliseconds else "")
     )
 
     return tmp[:-2]

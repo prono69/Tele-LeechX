@@ -99,8 +99,12 @@ async def incoming_message_f(client, message):
         link = link_send[1]
         if link.lower().startswith("magnet:"):
             text__ += f"🧲 <b>Magnet Link</b> :  <code>{link}</code>"
-        elif link.lower().startswith("http"):
-            text__ += f"🔗 <b>Link</b> :  <a href='{link}'>Click Here</a>"
+        elif link.lower().startswith("http") and "|" not in link:
+            text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>"
+        elif link.lower().startswith("http") and "|" in link:
+            splitData = link.split("|", 1)
+            link = splitData[0]
+            text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>\n🗳 <b>Custom Name</b> :<code>{splitData[1]}</code>"
         else:
             text__ += f"🔗 <b>Link</b> :  <code>{link}</code>"
     elif reply_to is not None:
@@ -129,18 +133,14 @@ async def incoming_message_f(client, message):
             cusfname = ""
             cusfnam = link.split("|", maxsplit=1)
             if len(cusfnam) > 1:
-                link = cusfnam[0]
-                cusfname = cusfnam[1]  
+                link, cusfname = cusfnam[0], cusfnam[1]
             LOGGER.info(cusfname)
-            #if cusfname != "" and link.lower().startswith("http"):
-                #text__ += f"🔗 <b>Link</b> :  <a href='{link}'>Click Here</a>\n🗳 <b>Custom Name</b> :<code>{cusfname}</code>"
-            if cusfname != "":
-                text__ += f"🔗 <b>Link</b> :  <code>{link}</code>\n🗳 <b>Custom Name</b> :<code>{cusfname}</code>"
+            if cusfname != "" and link.lower().startswith("http"):
+                text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>\n🗳 <b>Custom Name</b> :<code>{cusfname}</code>"
+            elif link.lower().startswith("http"):
+                text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>"
             else:
-                if link.lower().startswith("http"):
-                    text__ += f"🔗 <b>Link</b> :  <a href='{link}'>Click Here</a>"
-                else:
-                    text__ += f"🔗 <b>Link</b> :  <code>{link}</code>"
+                text__ += f"🔗 <b>Link</b> :  <code>{link}</code>"
     else:
         txtCancel = True
         link = "N/A"
@@ -148,13 +148,13 @@ async def incoming_message_f(client, message):
         
     if USER_DTS:
         link_text = await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
-    # Send Log Message to Channel 
+
     endText = f"\n📬 <b>Source :</b> <a href='{message.link}'>Click Here</a>\n\n#LeechStart #FXLogs"
     if not txtCancel:
         if LEECH_LOG:
             text__ += endText
             logs_msg = bot.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    LOGGER.info(f"Leech Started : {message.from_user.first_name}")
+        LOGGER.info(f"Leech Started : {message.from_user.first_name}")
 
     i_m_sefg = await message.reply_text("<code>Processing ... 🔄</code>", quote=True)
     rep_mess = message.reply_to_message
@@ -181,30 +181,28 @@ async def incoming_message_f(client, message):
         dl_url = message.command[1]
         LOGGER.info(dl_url)
 
+    elif len(message.command) > 2 and message.command[2] == "|":
+        dl_url, cf_name = message.command[1], message.command[3]
+
     else:
         await i_m_sefg.edit("<b>⚠️ Opps ⚠️</b>\n\n <b><i>⊠ Reply with Direct/Torrent Link or File⁉️</i></b>")
         return
     if dl_url is not None:
-
         current_user_id = message.from_user.id
-        # create an unique directory
         new_download_location = os.path.join(
             DOWNLOAD_LOCATION, str(current_user_id), str(time.time())
         )
-        # create download directory, if not exist
         if not os.path.isdir(new_download_location):
             os.makedirs(new_download_location)
         aria_i_p = ''
         if not is_file:
             await i_m_sefg.edit_text("<code>Extracting Links . . . 🔀</code>")
-            # start the aria2c daemon
             aria_i_p = await aria_start()
-            # LOGGER.info(aria_i_p)
         
         u_men = message.from_user.mention
         u_id = message.from_user.id 
         await i_m_sefg.edit_text(f"┏━━━━━━━━━━━━━━━━╻\n┣👤 𝐔𝐬𝐞𝐫 : {u_men}({u_id}) \n┃\n┃ <code>⚡️ Your Request Has Been Added To The Status List ⚡️</code> \n┃\n┣ <b><u>Send</u> /{STATUS_COMMAND} <u>To Check Your Progress</u></b>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
-        # try to download the "link"
+
         is_zip = False
         is_cloud = False
         is_unzip = False
@@ -242,7 +240,6 @@ async def incoming_message_f(client, message):
             client,
         )
         if not sagtus:
-            # if FAILED, display the error message
             await i_m_sefg.edit_text(err_message)
     else:
         await i_m_sefg.edit_text(

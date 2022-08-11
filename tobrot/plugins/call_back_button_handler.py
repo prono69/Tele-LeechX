@@ -312,7 +312,23 @@ async def button(bot, update: CallbackQuery):
         await update.message.edit_message_text(text=f"{u_men} Refreshing Status...⏳")
         asleep(5)
         #await update.message.edit_message_text(text=f"{status_txt}")
-
+    elif cb_data.startswith("theme"):
+        splitTheme = cb_data.split(" ")
+        uid, user_theme = splitTheme[1], splitTheme[2]
+        if int(update.from_user.id) == int(uid):
+            USER_THEMES[uid] = user_theme
+            await update.message.edit_text(
+                text = "Your Custom Theme Saved Successfully ✅️",
+                disable_web_page_preview = True, 
+                parse_mode=enums.ParseMode.HTML
+            )
+        else:
+            await bot.answer_callback_query(
+                callback_query_id=update.id,
+                text="Not Yours !!",
+                show_alert=True,
+                cache_time=0,
+            )
 
     '''
     elif cb_data == "":

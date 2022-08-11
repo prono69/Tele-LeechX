@@ -35,7 +35,7 @@ from tobrot.helper_funcs.direct_link_generator import url_link_generate
 from tobrot.helper_funcs.exceptions import DirectDownloadLinkException
 from tobrot.plugins.custom_utils import *
 from tobrot.plugins import is_appdrive_link, is_gdtot_link, is_hubdrive_link 
-
+from tobrot.helper_funcs.display_progress import TimeFormatter
 sys.setrecursionlimit(10 ** 4)
 
 async def aria_start():
@@ -260,9 +260,8 @@ async def call_apropriate_function(
     if cstom_file_name:
         os.rename(to_upload_file, cstom_file_name)
         to_upload_file = cstom_file_name
-    #
+
     response = {}
-    #LOGGER.info(response)
     
     u_men = user_message.from_user.mention 
     user_id = user_message.from_user.id
@@ -272,14 +271,17 @@ async def call_apropriate_function(
                 to_upload_file, sent_message_to_update_tg_p, user_message, user_id
             )
         else:
+            start_upload = time.time()
             final_response = await upload_to_tg(
                 sent_message_to_update_tg_p, to_upload_file, user_id, response, client
             )
+            end_upload = time.time()
             if not final_response:
                 return True, None
             try:
+                timeuti = TimeFormatter((end_upload - start_upload) * 1000)
                 message_to_send = ""
-                mention_req_user = f"┏ 🗃 𝙇𝙚𝙚𝙘𝙝 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙚 !! 🗃\n┃\n┣ 𝐔𝐬𝐞𝐫 : {u_men} \n┣🆔️ 𝐈𝐃 : #ID{user_id}\n┃\n"
+                mention_req_user = f"┏ 🗃 𝙇𝙚𝙚𝙘𝙝 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙚 !! 🗃\n┃\n┣ 👤 𝐔𝐬𝐞𝐫 : {u_men} ( #ID{user_id} )\n┣⏳️ 𝐓𝐢𝐦𝐞 𝐓𝐚𝐤𝐞𝐧 : {timeuti}\n┃\n"
                 message_credits = f"┃\n┃ #FXUploads\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
                 for key_f_res_se in final_response:
                     local_file_name = key_f_res_se
