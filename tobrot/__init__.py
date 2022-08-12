@@ -83,7 +83,7 @@ CAP_DICT = {}
 IMDB_TEMPLATE = {}
 USER_THEMES = {}
 AVAILABLE_THEMES = {}
-__version__ = "2.7.3"
+__version__ = "2.7.4"
 
 # The Telegram API things >>>>>>>>>>>
 TG_BOT_TOKEN = getVar("TG_BOT_TOKEN", "")
