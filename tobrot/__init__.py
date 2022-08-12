@@ -13,6 +13,7 @@ from time import time
 from requests import get as rget
 from os import environ, path as opath
 from subprocess import run
+from threading import Lock as ThreadLock
 from asyncio import Lock
 from urllib.request import urlretrieve
 from collections import defaultdict
@@ -206,7 +207,7 @@ STRING_SESSION = getVar("STRING_SESSION", "")
 
 #Bot Command [IMDB]  >>>>>>>>>>>
 CUSTOM_CAPTION = getVar("CUSTOM_CAPTION", "")
-MAX_LIST_ELM = getVar("MAX_LIST_ELM", None)
+MAX_LIST_ELM = getVar("MAX_LIST_ELM", 4)
 DEF_IMDB_TEMPLATE = getVar("IMDB_TEMPLATE", '''<b>Title: </b> {title} [{year}]
 <b>Also Known As:</b> {aka}
 <b>Rating ⭐️:</b> <i>{rating}</i>
@@ -253,6 +254,7 @@ gDict = defaultdict(lambda: [])
 user_settings = defaultdict(lambda: {})
 gid_dict = defaultdict(lambda: [])
 _lock = Lock()
+user_settings_lock = ThreadLock()
 
 # Rclone Config Via Raw Gist URL & BackUp >>>>>>>>
 try:                                                                      

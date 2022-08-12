@@ -8,6 +8,7 @@
 # All Right Reserved
 
 import sys
+import datetime
 
 from math import floor
 from asyncio import sleep as asleep, subprocess, create_subprocess_shell
@@ -36,9 +37,10 @@ from tobrot import (
     UPDATES_CHANNEL,
     CANCEL_COMMAND_G,
     LOG_FILE_NAME,
-    DB_URI
+    DB_URI,
+    user_settings
     )
-from tobrot.helper_funcs.display_progress import humanbytes
+from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.helper_funcs.download_aria_p_n import aria_start
 from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.database.db_func import DatabaseManager
@@ -77,9 +79,7 @@ def progress_bar(percentage):
         percentage=int(percentage)
     except:
         percentage = 0
-    return ''.join(
-        p_used if i <= percentage // 10 else p_total for i in range(0, 10)
-    )
+    return ''.join(p_used if i <= percentage // 10 else p_total for i in range(10))
 
 def bot_button_stats():
     hr, mi, se = up_time(time() - BOT_START_TIME)
@@ -92,7 +92,7 @@ def bot_button_stats():
     used_percent = (int(float(used[:-3])) / int(float(total[:-3]))) * 100
     sent = humanbytes(net_io_counters().bytes_sent)
     recv = humanbytes(net_io_counters().bytes_recv)
-    stats = f'''
+    return f'''
 ┏━━━━ 𝗕𝗼𝘁 𝗦𝘁𝗮𝘁𝘀 ━━━━━╻
 ┃ ᑕᑭᑌ: {progress_bar(cpu)} {cpu}% 
 ┃ ᖇᗩᗰ: {progress_bar(ram)} {ram}%  
@@ -101,7 +101,6 @@ def bot_button_stats():
 ┃ T: {total} ┃ ᖴ: {free}
 ┃ ᗪIՏK: {progress_bar(used_percent)} {int(used_percent)}%
 ┗━━━━━━━━━━━━━━━━╹'''
-    return stats
 
 async def status_message_f(client, message):
     aria_i_p = await aria_start()
@@ -120,7 +119,6 @@ async def status_message_f(client, message):
     await message.delete()
     while True:
         downloads = aria_i_p.get_downloads()
-        LOGGER.info(downloads)
         msg = ""
         for file in downloads:
             downloading_dir_name = "N/A"
@@ -129,47 +127,45 @@ async def status_message_f(client, message):
             except:
                 pass
             if file.status == "active":
+                umess = user_settings[file.gid]
                 percentage = int(file.progress_string(0).split('%')[0])
                 prog = "[{0}{1}]".format(
-                    "".join(
-                        [FINISHED_PROGRESS_STR for _ in range(floor(percentage / 5))]
-                    ),
-                    "".join(
-                        [UN_FINISHED_PROGRESS_STR for _ in range(20 - floor(percentage / 5))]
-                    )
+                    "".join([FINISHED_PROGRESS_STR for _ in range(floor(percentage / 5))]),
+                    "".join([UN_FINISHED_PROGRESS_STR for _ in range(20 - floor(percentage / 5))])
                 )
-
-                msg += f"\n┏━━━━━━━━━━━━━━━━━━╻"
-                msg += f"\n┣🔰𝐍𝐚𝐦𝐞: <code>{downloading_dir_name}</code>"
-                msg += f"\n┣🔰𝐒𝐭𝐚𝐭𝐮𝐬: <i>Downloading...📥</i>"
-                msg += f"\n┃<code>{prog}</code>"
-                msg += f"\n┣🔰𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝: <code>{file.progress_string()}</code> <b>of</b> <code>{file.total_length_string()}</code>"
-                msg += f"\n┣🔰𝐒𝐩𝐞𝐞𝐝: <code>{file.download_speed_string()}</code>,"
-                msg += f"🔰𝐄𝐓𝐀: <code>{file.eta_string()}</code>"
-                #umen = f'<a href="tg://user?id={file.message.from_user.id}">{file.message.from_user.first_name}</a>'
-                #msg += f"\n<b>👤User:</b> {umen} (<code>{file.message.from_user.id}</code>)"
-                #msg += f"\n<b>⚠️Warn:</b> <code>/warn {file.message.from_user.id}</code>"
                 is_file = file.seeder
+                curTime = time()
+                inTime = datetime.datetime.timestamp(datetime.datetime.strptime(str(umess.date),"%Y-%m-%d %H:%M:%S"))
+                msg += f"\n┏━━━━━━━━━━━━━━━━━━╻"
+                msg += f"\n┣🗄 𝐍𝐚𝐦𝐞: <a href='{umess.link}'>{downloading_dir_name}</a>"
+                msg += f"\n┣📈 𝐒𝐭𝐚𝐭𝐮𝐬: <i>Downloading...📥</i>"
+                msg += f"\n┃<code>{prog}</code>"
+                msg += f"\n┣⚡️ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝: <code>{file.progress_string()}</code> <b>of</b> <code>{file.total_length_string()}</code>"
+                msg += f"\n┣📡 𝐒𝐩𝐞𝐞𝐝: <code>{file.download_speed_string()}</code>,"
+                msg += f"⏳️ 𝐄𝐓𝐀: <code>{file.eta_string()}</code>"
+                msg += f"\n┣⏰️ 𝐄𝐥𝐚𝐬𝐩𝐞𝐝: <code>{TimeFormatter((curTime - inTime) * 1000)}</code>"
+                msg += f"\n┣<b>👤 𝐔𝐬𝐞𝐫:</b> {umess.from_user.mention} ( #ID{umess.from_user.id} )"
+                msg += f"\n┣<b>⚠️ 𝐖𝐚𝐫𝐧:</b> <code>/warn {umess.from_user.id}</code>"
                 if is_file is None:
-                    msg += f"\n┣🔰𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
+                    msg += f"\n┣📊 𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
                 else:
-                    msg += f"\n┣🔰𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
-                msg += f"\n┣🔰𝐂𝐚𝐧𝐜𝐞𝐥: <code>/{CANCEL_COMMAND_G} {file.gid}</code>"
+                    msg += f"\n┣🍳𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
+                msg += f"\n┣🚫 𝐓𝐨 𝐂𝐚𝐧𝐜𝐞𝐥: <code>/{CANCEL_COMMAND_G} {file.gid}</code>"
                 msg += f"\n┗━━━━━━━━━━━━━━━━━━╹\n"
 
-        ms_g = f"◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
+        ms_g = "◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
         if UPDATES_CHANNEL:
             ms_g += f"\n♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
         umen = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
         mssg = f"\n❣𝙎𝙩𝙖𝙩𝙪𝙨 : {umen} (<code>{message.from_user.id}</code>)\n◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
-        
+
         button_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton('Sᴛᴀᴛs\nCʜᴇᴄᴋ', callback_data="stats"),
              InlineKeyboardButton('Cʟᴏsᴇ', callback_data="admin_close")]
         ])
 
         if msg == "":
-            msg = f"\n┏━━━━━━━━━━━━━━━╻\n┃\n┃ ⚠️ <b>No Active, Queued or Paused \n┃ Torrents / Direct Links ⚠️</b>\n┃\n┗━━━━━━━━━━━━━━━╹\n"
+            msg = f"\n┏━━━━━━━━━━━━━━━━━━╻\n┃\n┃ ⚠️ <b>No Active, Queued or Paused \n┃ Torrents / Direct Links ⚠️</b>\n┃\n┗━━━━━━━━━━━━━━━━━━╹\n"
             msg = mssg + "\n" + msg + "\n" + ms_g
             await to_edit.edit(msg, reply_markup=button_markup)
             await asleep(EDIT_SLEEP_TIME_OUT)
@@ -188,7 +184,7 @@ async def status_message_f(client, message):
             if msg != prev_mess:
                 try:
                     await to_edit.edit(msg, parse_mode=enums.ParseMode.HTML, reply_markup=button_markup)
-                except MessageIdInvalid as df:
+                except MessageIdInvalid:
                     break
                 except MessageNotModified as ep:
                     LOGGER.info(ep)
@@ -202,7 +198,6 @@ async def status_message_f(client, message):
 
 async def cancel_message_f(client, message):
     if len(message.command) > 1:
-        # /cancel command
         i_m_s_e_g = await message.reply_text("<code>Checking..⁉️</code>", quote=True)
         aria_i_p = await aria_start()
         g_id = message.command[1].strip()
@@ -216,14 +211,11 @@ async def cancel_message_f(client, message):
             if len(gid_list) != 0:
                 downloads = aria_i_p.get_downloads(gid_list)
             aria_i_p.remove(downloads=downloads, force=True, files=True, clean=True)
-            await i_m_s_e_g.edit_text(
-                f"⛔<b> Download Cancelled </b>⛔ :\n<code>{name} ({size})</code> By <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name}</a>"
-            )
+            await i_m_s_e_g.edit_text(f"⛔<b> Download Cancelled </b>⛔ :\n<code>{name} ({size})</code> By <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name}</a>")
         except Exception as e:
             await i_m_s_e_g.edit_text("<i>⚠️ FAILED ⚠️</i>\n\n" + str(e) + "\n#Error")
     else:
         await message.delete()
-
 
 async def exec_message_f(client, message):
     DELAY_BETWEEN_EDITS = 0.3
@@ -250,7 +242,7 @@ async def exec_message_f(client, message):
     else:
         _o = o.split("\n")
         o = "`\n".join(_o)
-    OUTPUT = f"<b>QUERY:\n\nLink: {link} \n\nPID: {process.pid}</b>\n\n<b>Stderr: \n{e}\nOutput:\n\n {o}</b> "
+    OUTPUT = f"<b>QUERY:</b>\n\nCommand: {link} \n\nPID: <code>{process.pid}</code>\n\n<b>Stderr:</b> \n<code>{e}</code>\n<b>Output</b>:\n\n <code>{o}</code>"
     await work_in.delete()
 
     if len(OUTPUT) > MAX_MESSAGE_LENGTH:
@@ -267,9 +259,8 @@ async def exec_message_f(client, message):
     else:
         await message.reply_text(OUTPUT, disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML, quote=True)
 
-
 async def upload_document_f(client, message):
-    imsegd = await message.reply_text("processing ...")
+    imsegd = await message.reply_text("⚙️ Processing ...")
     if message.from_user.id in AUTH_CHANNEL and " " in message.text:
         recvd_command, local_file_name = message.text.split(" ", 1)
         recvd_response = await upload_to_tg(
@@ -277,7 +268,6 @@ async def upload_document_f(client, message):
         )
         LOGGER.info(recvd_response)
     await imsegd.delete()
-
 
 async def eval_message_f(client, message):
     if message.from_user.id not in AUTH_CHANNEL:

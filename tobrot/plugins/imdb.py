@@ -10,8 +10,11 @@
 from re import findall, IGNORECASE
 from imdb import IMDb
 from pycountry import countries as conn
+
 from tobrot import app, MAX_LIST_ELM, DEF_IMDB_TEMPLATE,  LOGGER
 from tobrot.plugins.custom_utils import *
+from tobrot.helper_funcs.display_progress import TimeFormatter
+
 from pyrogram import filters, enums
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery 
 from pyrogram.errors.exceptions.bad_request_400 import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
@@ -106,7 +109,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
     else:
         plot = movie.get('plot outline')
     if plot and len(plot) > 800:
-        plot = plot[0:800] + "..."
+        plot = plot[:800] + "..."
 
     return {
         'title': movie.get('title'),
@@ -118,7 +121,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'kind': movie.get("kind"),
         "imdb_id": f"tt{movie.get('imdbID')}",
         "cast": list_to_str(movie.get("cast")),
-        "runtime": list_to_str(movie.get("runtimes")),
+        "runtime": list_to_str([TimeFormatter(int(run) * 60 * 1000) for run in movie.get("runtimes")]),
         "countries": list_to_hash(movie.get("countries"), True),
         "certificates": list_to_str(movie.get("certificates")),
         "languages": list_to_hash(movie.get("languages")),
@@ -156,20 +159,25 @@ def list_to_hash(k, flagg=False):
     if not k:
         return ""
     elif len(k) == 1:
-        if flagg:
+        if not flagg:
+            return str("#"+k[0].replace(" ", "_"))
+        try:
             conflag = (conn.get(name=k[0])).flag
-            return str(conflag+" #"+k[0].replace(" ", "_"))
-        else:
+            return str(f"{conflag} #" + k[0].replace(" ", "_"))
+        except AttributeError:
             return str("#"+k[0].replace(" ", "_"))
     elif MAX_LIST_ELM:
         k = k[:int(MAX_LIST_ELM)]
         for elem in k:
             ele = elem.replace(" ", "_")
             if flagg:
-                conflag = (conn.get(name=elem)).flag
-                listing += f'{conflag} '
+                try:
+                    conflag = (conn.get(name=elem)).flag
+                    listing += f'{conflag} '
+                except AttributeError:
+                    pass
             listing += f'#{ele}, '
-        return listing[:-2]+' ...'
+        return f'{listing[:-2]} ...'
     else:
         for elem in k:
             ele = elem.replace(" ", "_")
@@ -184,14 +192,7 @@ async def imdb_callback(bot, quer_y: CallbackQuery):
     splitData = quer_y.data.split('#')
     movie, from_user = splitData[1], splitData[2]
     imdb = await get_poster(query=movie, id=True)
-    btn = [
-            [
-                InlineKeyboardButton(
-                    text=f"⚡ 𝘊𝘭𝘪𝘤𝘬 𝘏𝘦𝘳𝘦 ⚡",
-                    url=imdb['url'],
-                )
-            ]
-        ]
+    btn = [[InlineKeyboardButton(text="⚡ 𝘊𝘭𝘪𝘤𝘬 𝘏𝘦𝘳𝘦 ⚡", url=imdb['url'])]]
     message = quer_y.message.reply_to_message or quer_y.message
     template = IMDB_TEMPLATE.get(int(from_user), "")
     if not template:

@@ -7,11 +7,11 @@
 # This is Part of < https://github.com/5MysterySD/Tele-LeechX >
 # All Right Reserved
 
-import asyncio
-import os
 import sys
-import time
-import aria2p
+from asyncio import create_subprocess_exec, subprocess, sleep as asleep
+from os import path as opath, rename as orename, walk as owalk
+from time import sleep as tsleep, time
+from aria2p import API as ariaAPI, Client as ariClient
 from subprocess import check_output
 from pyrogram.errors import FloodWait, MessageNotModified
 from tobrot import (
@@ -21,7 +21,9 @@ from tobrot import (
     LOGGER,
     UPDATES_CHANNEL, 
     MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START,
-    CLONE_COMMAND_G
+    CLONE_COMMAND_G,
+    user_settings_lock,
+    user_settings
 )
 from tobrot.helper_funcs.create_compressed_archive import (
     create_archive,
@@ -36,6 +38,7 @@ from tobrot.helper_funcs.exceptions import DirectDownloadLinkException
 from tobrot.plugins.custom_utils import *
 from tobrot.plugins import is_appdrive_link, is_gdtot_link, is_hubdrive_link 
 from tobrot.helper_funcs.display_progress import TimeFormatter
+
 sys.setrecursionlimit(10 ** 4)
 
 async def aria_start():
@@ -44,60 +47,62 @@ async def aria_start():
     #f"--dir={DOWNLOAD_LOCATION}", "--disk-cache=0", "--seed-ratio=0.01"
     LOGGER.info("[ARIA2C] Daemon Initiated ")
 
-    process = await asyncio.create_subprocess_exec(
+    process = await create_subprocess_exec(
         *aria2_daemon_start_cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     stdout, stderr = await process.communicate()
 
-    aria2 = aria2p.API(
-        aria2p.Client(host="http://localhost",
-                      port=ARIA_TWO_STARTED_PORT, secret="")
+    return ariaAPI(
+        ariClient(
+            host="http://localhost", port=ARIA_TWO_STARTED_PORT, secret=""
+        )
     )
-    return aria2
 
-def add_magnet(aria_instance, magnetic_link, c_file_name):
+def add_magnet(aria_instance, magnetic_link, c_file_name, user_msg):
     options = None
     try:
         download = aria_instance.add_magnet(magnetic_link, options=options)
+        with user_settings_lock:
+            user_settings[download.gid] = user_msg
     except Exception as e:
-        return (
-            False,
-            "⛔ **FAILED** ⛔ \n" + str(e) + " \n<b>⌧ Your link is Dead ⚰ .</b>",
-        )
+        return False, f"⛔ **FAILED** ⛔ \n\n<b>⌧ Your link is Dead Maybe ⚰ .\n{e}</b>"
     else:
-        return True, "" + download.gid + ""
+        return True, download.gid
 
-
-def add_torrent(aria_instance, torrent_file_path):
+def add_torrent(aria_instance, torrent_file_path, user_msg):
     if torrent_file_path is None:
-        return (
-            False,
-            "⛔ **FAILED** ⛔ \n"
-            + str(e)
-            + " \n⌧ <i>Something went Wrong when trying to add <u>TORRENT</u> file to Status.</i>",
-        )
-    if os.path.exists(torrent_file_path):
-        # Add Torrent Into Queue
+        return False, "⛔ **FAILED** ⛔\n\n⌧ <i>Something went Wrong when trying to add <u>TORRENT</u> file to Status.</i>"
+    if opath.exists(torrent_file_path):
         try:
-            download = aria_instance.add_torrent(
-                torrent_file_path, uris=None, options=None, position=None
-            )
+            download = aria_instance.add_torrent(torrent_file_path, uris=None, options=None, position=None)
+            with user_settings_lock:
+                user_settings[download.gid] = user_msg
         except Exception as e:
-            return (
-                False,
-                "⛔ **FAILED** ⛔ \n"
-                + str(e)
-                + " \n<b>⌧ Your Link is Slow to Process .</b>",
-            )
+            return False, f"⛔ **FAILED** ⛔ \n\n<b>⌧ Your Link is Slow to Process .</b>\n⌧ {e}"
         else:
-            return True, "" + download.gid + ""
+            return True, download.gid
+    elif (torrent_file_path.lower()).startswith("https") and (not opath.exists(torrent_file_path)):
+        sagtus, g_id = add_url(aria_instance, torrent_file_path, None, user_msg)
+        if not sagtus:
+            return sagtus, g_id
+        try:
+            file = aria_instance.get_download(g_id)
+        except ariClient.ClientException as ee:
+            LOGGER.error(ee)
+            return True, None
+        torrent_file_path = file.name
+        try:
+            sagtus, err_message = add_torrent(aria_instance, torrent_file_path, user_msg)
+        except Exception as e:
+            return False, f"⛔ **FAILED** ⛔ \n\n<b>⌧ Your Link is Slow to Process .</b>\n⌧ {e}"
+        else:
+            return True, err_message
     else:
         return False, "⛔ **FAILED** ⛔ \n⌧ Please try other sources to get workable link to Process . . ."
 
-
-def add_url(aria_instance, text_url, c_file_name):
+def add_url(aria_instance, text_url, c_file_name, user_msg):
     options = None
     uris = None
     if "zippyshare.com" in text_url \
@@ -138,34 +143,22 @@ def add_url(aria_instance, text_url, c_file_name):
             except DirectDownloadLinkException as e:
                 LOGGER.info(f'{text_url}: {e}')
     elif "drive.google.com" in text_url:
-        return (
-            False,
-            f"⛔ **FAILED** ⛔ \n\n⌧ <i>Please do not send Drive links to Process with this Command. Use /{CLONE_COMMAND_G} for Cloning the Link, then Use the Index Link !!</i>",
-        )
+        return False, f"⛔ **FAILED** ⛔ \n\n⌧ <i>Please do not send Drive links to Process with this Command. Use /{CLONE_COMMAND_G} for Cloning the Link, then Use the Index Link !!</i>"
     elif "mega.nz" in text_url or "mega.co.nz" in text_url:
-        return (
-            False,
-            "⛔ **FAILED** ⛔ \n\n⌧ <i>Please do not send Mega links . I am yet not able to Process Those !!</i>",
-        )
+        return False, "⛔ **FAILED** ⛔ \n\n⌧ <i>Please do not send Mega links . I am yet not able to Process Those !!</i>"
     elif is_gdtot_link(text_url) or is_hubdrive_link(text_url) or is_appdrive_link(text_url):
-        return (
-            False,
-            "⛔ **FAILED** ⛔ \n\n⌧ <i>Please Use /parser to Process the Links.</i>",
-        )
+        return False, "⛔ **FAILED** ⛔ \n\n⌧ <i>Please Use /parser to Process the Links.</i>"
     else:
         uris = [text_url]
-    # Add URL Into Queue
+
     try:
         download = aria_instance.add_uris(uris, options=options)
+        with user_settings_lock:
+            user_settings[download.gid] = user_msg
     except Exception as e:
-        return (
-            False,
-            "⛔ **FAILED** ⛔ \n" +
-            str(e) + " \n\n⌧ <i>Please do not send Slow links to Process.</i>",
-        )
+        return False, f"⛔ **FAILED** ⛔ \n\n⌧ <i>Please do not send Slow links to Process.</i>\n{e}"
     else:
-        return True, "" + download.gid + ""
-
+        return True, download.gid
 
 async def call_apropriate_function(
     aria_instance,
@@ -181,33 +174,34 @@ async def call_apropriate_function(
     client,
 ):
     if not is_file:
+
         if incoming_link.lower().startswith("magnet:"):
-            sagtus, err_message = add_magnet(
-                aria_instance, incoming_link, c_file_name)
+            sagtus, err_message = add_magnet(aria_instance, incoming_link, c_file_name, user_message)
         elif incoming_link.lower().endswith(".torrent"):
-            sagtus, err_message = add_torrent(aria_instance, incoming_link)
+            sagtus, err_message = add_torrent(aria_instance, incoming_link, user_message)
         else:
-            sagtus, err_message = add_url(
-                aria_instance, incoming_link, c_file_name)
+            sagtus, err_message = add_url(aria_instance, incoming_link, c_file_name, user_message)
+
         if not sagtus:
             return sagtus, err_message
         LOGGER.info(err_message)
+
         await check_progress_for_dl(
             aria_instance, err_message, sent_message_to_update_tg_p, None
         )
         if incoming_link.startswith("magnet:"):
             err_message = await check_metadata(aria_instance, err_message)
-            await asyncio.sleep(1)
+            await asleep(1)
             if err_message is not None:
                 await check_progress_for_dl(
                     aria_instance, err_message, sent_message_to_update_tg_p, None
                 )
             else:
                 return False, "can't get metadata \n\n#MetaDataError"
-        await asyncio.sleep(1)
+        await asleep(1)
         try:
             file = aria_instance.get_download(err_message)
-        except aria2p.client.ClientException as ee:
+        except ariClient.ClientException as ee:
             LOGGER.error(ee)
             return True, None
         to_upload_file = file.name
@@ -231,12 +225,12 @@ async def call_apropriate_function(
         try:
             check_ifi_file = get_base_name(to_upload_file)
             await unzip_me(to_upload_file)
-            if os.path.exists(check_ifi_file):
+            if opath.exists(check_ifi_file):
                 to_upload_file = check_ifi_file
         except Exception as ge:
             LOGGER.info(ge)
             LOGGER.info(
-                f"Can't extract {os.path.basename(to_upload_file)}, Uploading the same file"
+                f"Can't extract {opath.basename(to_upload_file)}, Uploading the same file"
             )
 
     if to_upload_file:
@@ -244,25 +238,25 @@ async def call_apropriate_function(
         CUSTOM_FILE_NAME = prefix
 
         if CUSTOM_FILE_NAME != "":
-            if os.path.isfile(to_upload_file):
-                os.rename(to_upload_file,
-                          f"{CUSTOM_FILE_NAME}{to_upload_file}")
-                to_upload_file = f"{CUSTOM_FILE_NAME}{to_upload_file}"
+            if opath.isfile(to_upload_file):
+                if not to_upload_file.startswith(CUSTOM_FILE_NAME):
+                    orename(to_upload_file, f"{CUSTOM_FILE_NAME}{to_upload_file}")
+                    to_upload_file = f"{CUSTOM_FILE_NAME}{to_upload_file}"
             else:
-                for root, _, files in os.walk(to_upload_file):
-                    LOGGER.info(files)
+                for root, _, files in owalk(to_upload_file):
                     for org in files:
                         p_name = f"{root}/{org}"
-                        n_name = f"{root}/{CUSTOM_FILE_NAME}{org}"
-                        os.rename(p_name, n_name)
+                        if not org.startswith(CUSTOM_FILE_NAME):
+                            n_name = f"{root}/{CUSTOM_FILE_NAME}{org}"
+                            orename(p_name, n_name)
                 to_upload_file = to_upload_file
 
     if cstom_file_name:
-        os.rename(to_upload_file, cstom_file_name)
+        orename(to_upload_file, cstom_file_name)
         to_upload_file = cstom_file_name
 
     response = {}
-    
+
     u_men = user_message.from_user.mention 
     user_id = user_message.from_user.id
     if com_g:
@@ -271,11 +265,11 @@ async def call_apropriate_function(
                 to_upload_file, sent_message_to_update_tg_p, user_message, user_id
             )
         else:
-            start_upload = time.time()
+            start_upload = time()
             final_response = await upload_to_tg(
                 sent_message_to_update_tg_p, to_upload_file, user_id, response, client
             )
-            end_upload = time.time()
+            end_upload = time()
             if not final_response:
                 return True, None
             try:
@@ -290,13 +284,13 @@ async def call_apropriate_function(
                     private_link = f"https://t.me/c/{channel_id}/{message_id}"
                     message_to_send += f"┣ ⇒ <a href='{private_link}'>{local_file_name}</a>\n"
                     if len(mention_req_user.encode('utf-8') + message_to_send.encode('utf-8') + message_credits.encode('utf-8')) > 4000:
-                        time.sleep(1.5)
+                        tsleep(1.5)
                         await user_message.reply_text(
                             text=mention_req_user + message_to_send + message_credits, quote=True, disable_web_page_preview=True
                         )
                         message_to_send = ""
                 if message_to_send != "":
-                    time.sleep(1.5)
+                    tsleep(1.5)
                     await user_message.reply_text(
                         text=mention_req_user + message_to_send + message_credits, quote=True, disable_web_page_preview=True
                     )
@@ -306,8 +300,6 @@ async def call_apropriate_function(
 
 
 # https://github.com/jaskaranSM/UniBorg/blob/6d35cf452bce1204613929d4da7530058785b6b1/stdplugins/aria.py#L136-L164
-# todo- so much unwanted code, I will remove in future after some testing
-
 async def check_progress_for_dl(aria2, gid, event, previous_message):
     while True:
         try:
@@ -317,9 +309,7 @@ async def check_progress_for_dl(aria2, gid, event, previous_message):
             if not complete:
                 if not file.error_message:
                     if file.has_failed:
-                        LOGGER.info(
-                            f"⛔ Cancel Downloading . .⛔ \n\n ⌧ <i>FileName: `{file.name}` \n⌧ May Be Due to Slow Torrent (Less Seeds to Process).</i>"
-                        )
+                        LOGGER.info(f"⛔ Cancel Downloading . .⛔ \n\n ⌧ <i>FileName: `{file.name}` \n⌧ May Be Due to Slow Torrent (Less Seeds to Process).</i>")
                         await event.reply(
                             f"⛔ Download Cancelled ⛔ :\n\n⌧ <i>FileName: </i><code>{file.name}</code>\n\n #MetaDataError", quote=True
                         )
@@ -328,55 +318,48 @@ async def check_progress_for_dl(aria2, gid, event, previous_message):
                 else:
                     msg = file.error_message
                     LOGGER.info(msg)
-                    await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
+                    await asleep(EDIT_SLEEP_TIME_OUT)
                     await event.reply(f"`{msg}`")
                     return
-                await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
+                await asleep(EDIT_SLEEP_TIME_OUT)
                 # await check_progress_for_dl(aria2, gid, event, previous_message)
             else:
                 LOGGER.info(
-                    f"✅ <i>Downloaded Successfully</i> ✅: `{file.name} ({file.total_length_string()})` "
+                    f"Downloaded Successfully : `{file.name} ({file.total_length_string()})` "
                 )
-                # await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
                 if not file.is_metadata:
                     await event.edit(
                         f"<b>🔰Status: <i>Downloaded 📥</i></b>:\n\n📨 <b><i>File Name</i></b>: \n`{file.name}`\n\n🗃 <b><i>Total Size</i></b>: 《 `{file.total_length_string()}` 》\n\n #Downloaded" 
                     )
                 return
-        except aria2p.client.ClientException:
-            await event.reply(
-                f"<i>⛔ Download Cancelled ⛔</i> :\n<code>{file.name} ({file.total_length_string()})</code>", quote=True
-            )
+        except ariClient.ClientException:
+            await event.reply(f"<i>⛔ Download Cancelled ⛔</i> :\n<code>{file.name} ({file.total_length_string()})</code>", quote=True)
             return
         except MessageNotModified as ep:
             LOGGER.info(ep)
-            await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
+            await asleep(EDIT_SLEEP_TIME_OUT)
             # await check_progress_for_dl(aria2, gid, event, previous_message)
             return
         except FloodWait as e:
             LOGGER.info(f"FloodWait : Sleeping {e.value}s")
-            time.sleep(e.value)
+            tsleep(e.value)
         except Exception as e:
             LOGGER.info(str(e))
             if "not found" in str(e) or "'file'" in str(e):
                 await event.edit(
                     f"<i>⛔ Download Cancelled ⛔</i> :\n<code>{file.name} ({file.total_length_string()})</code>"
                 )
-                return
             else:
                 LOGGER.info(str(e))
-                await event.edit(
-                    "⛔ <u>ERROR</u> ⛔ :\n<code>{}</code> \n\n#Error".format(str(e))
-                )
-                return
+                await event.edit(f"⛔ <u>ERROR</u> ⛔ :\n<code>{e}</code> \n\n#Error")
 
+            return
 
-# https://github.com/jaskaranSM/UniBorg/blob/6d35cf452bce1204613929d4da7530058785b6b1/stdplugins/aria.py#L136-L164
 async def check_metadata(aria2, gid):
     file = aria2.get_download(gid)
 
     if not file.followed_by_ids:
         return None
     new_gid = file.followed_by_ids[0]
-    LOGGER.info("Changing GID " + gid + " to " + new_gid)
+    LOGGER.info(f"Changing GID : {gid} to {new_gid}")
     return new_gid

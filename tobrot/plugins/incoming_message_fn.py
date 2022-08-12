@@ -12,6 +12,7 @@ import os
 import time
 from pathlib import Path
 import requests
+from urllib.parse import unquote, quote
 
 from telegram import ParseMode
 from tobrot import (
@@ -60,6 +61,20 @@ async def incoming_purge_message_f(client, message):
             LOGGER.info(download.remove(force=True))
     await i_m_sefg2.delete()
 
+def magnet_parse(mag_link):
+    link = unquote(mag_link)
+    link = link.split("&")
+    tracker = ""
+    tracCount = 0
+    for check in link:
+        if check.startswith('dn='):
+            name = check.replace("dn=", "")
+        elif check.startswith('tr='):
+            tracCount += 1
+            tracker += f"{tracCount}. <code>{check.replace('tr=', '')}</code>\n"
+        elif check.startswith('magnet:?xt=urn:btih:'):
+            hashh = check.replace('magnet:?xt=urn:btih:', '')
+    return f"🔸️ <b>Hash :</b> <i>{hashh}</i>\n📨 <b>Name :</b> {name}\n🖲 <b>Trackers ({tracCount}) :</b> \n{tracker} \n 🔗 <a href='https://t.me/share/url?url={quote(mag_link)}'>Share To Telegram</a>"
 
 async def incoming_message_f(client, message):
     """/leech command or /gleech command"""
@@ -98,7 +113,7 @@ async def incoming_message_f(client, message):
     if len(link_send) > 1:
         link = link_send[1]
         if link.lower().startswith("magnet:"):
-            text__ += f"🧲 <b>Magnet Link</b> :  <code>{link}</code>"
+            text__ += f"🧲 <b>Magnet Link Details</b> :  \n{magnet_parse(link)}"
         elif link.lower().startswith("http") and "|" not in link:
             text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>"
         elif link.lower().startswith("http") and "|" in link:
@@ -127,7 +142,7 @@ async def incoming_message_f(client, message):
             else:
                 text__ += ""
         elif reply_to.text.lower().startswith("magnet:"):
-            text__ += f"🧲 <b>Magnet Link</b> :  <code>{reply_to.text}</code>"
+            text__ += f"🧲 <b>Magnet Link Details</b> :  \n{magnet_parse(reply_to.text)}"
         else:
             link = reply_to.text
             cusfname = ""
