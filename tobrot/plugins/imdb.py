@@ -11,6 +11,7 @@ from re import findall, IGNORECASE
 from imdb import IMDb
 from pycountry import countries as conn
 
+from tobrot import LOGGER
 from tobrot import app, MAX_LIST_ELM, DEF_IMDB_TEMPLATE,  LOGGER
 from tobrot.plugins.custom_utils import *
 from tobrot.helper_funcs.display_progress import TimeFormatter
@@ -110,7 +111,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         plot = movie.get('plot outline')
     if plot and len(plot) > 800:
         plot = plot[:800] + "..."
-
+    LOGGER.info(movie)
     return {
         'title': movie.get('title'),
         'votes': movie.get('votes'),
@@ -199,6 +200,7 @@ async def imdb_callback(bot, quer_y: CallbackQuery):
     if not template:
         template = DEF_IMDB_TEMPLATE
     if imdb and template != "":
+        LOGGER.info(imdb)
         caption = template.format(
             query = imdb['title'],
             title = imdb['title'],
