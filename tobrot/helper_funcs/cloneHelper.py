@@ -60,16 +60,22 @@ class CloneHelper:
             if USER_DTS:
                 process = await mes.reply_text(f"{def_text}**📎 GDToT Link** : `{mess[0]}`\n\n `Generating . . .`")
             info_parsed = gdtot(mess[0])
-            message = info_parsed['gdrive_link']
             if USER_DTS:
-                await process.edit_text(f"{def_text}**📎GDToT Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{message}`")
+                if info_parsed['gdrive_link']:
+                    await process.edit_text(f"{def_text}**📎GDToT Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{info_parsed['gdrive_link']}`")
+                else:
+                    await process.edit_text(f"{def_text}**📎GDToT Link** : `{mess[0]}`\n**⛔️ Error** : `{info_parsed['message']}`")
+                    return
         elif is_appdrive_link(mess[0]):
             if USER_DTS:
                 process = await mes.reply_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n\n `Generating . . .`")
             info_parsed = appdrive_dl(mess[0], is_direct=False)
-            message = info_parsed['gdrive_link']
             if USER_DTS:
-                await process.edit_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{message}`")
+                if info_parsed['gdrive_link']:
+                    await process.edit_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{info_parsed['gdrive_link']}`")
+                else:
+                    await process.edit_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n**⛔️ Error** : `{info_parsed['error_message']}`")
+                    return
         elif "kolop.icu" in mess[0]:
             if USER_DTS:
                 process = await mes.reply_text(f"{def_text}**📎 Kolop Link** : `{mess[0]}`\n\n `Generating . . .`")

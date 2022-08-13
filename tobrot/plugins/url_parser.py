@@ -134,10 +134,14 @@ async def bypass_link(text_url: str):
     elif is_gdtot_link(text_url):
         try:
             info_parsed = gdtot(text_url)
-            url_string = f"📨 **Name** : `{info_parsed['title']}` \n📁 **File Size** : `{info_parsed['size']}` \n📆 **Date** : `{info_parsed['date']}` \n☁️ **GDrive URL** : `{info_parsed['gdrive_link']}`"
+            if (not info_parsed['gdrive_link']):
+                url_string = f"⛔ **Parsing Error** ⛔ : \n `{info_parsed['message']}`"
+            else:
+                url_string = f"📨 **Name** : `{info_parsed['title']}` \n📁 **File Size** : `{info_parsed['size']}` \n📆 **Date** : `{info_parsed['date']}` \n☁️ **GDrive URL** : `{info_parsed['gdrive_link']}`"
             return False, url_string
         except DirectDownloadLinkException as e:
             LOGGER.info(f'{text_url}: {e}')
+            return False, e
     elif is_appdrive_link(text_url) or any(x in text_url for x in drive_list):
         try:
             is_direct = False
@@ -175,6 +179,7 @@ async def bypass_link(text_url: str):
             return False, url_string
         except DirectDownloadLinkException as er:
             LOGGER.info(f'{text_url}: {er}')
+            return False, er
     else:
         return True, None
 

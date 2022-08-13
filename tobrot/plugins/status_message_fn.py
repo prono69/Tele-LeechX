@@ -8,8 +8,8 @@
 # All Right Reserved
 
 import sys
-import datetime
 
+from datetime import datetime
 from math import floor
 from asyncio import sleep as asleep, subprocess, create_subprocess_shell
 from io import BytesIO, StringIO
@@ -135,7 +135,6 @@ async def status_message_f(client, message):
                 )
                 is_file = file.seeder
                 curTime = time()
-                inTime = datetime.datetime.timestamp(datetime.datetime.strptime(str(umess.date),"%Y-%m-%d %H:%M:%S"))
                 msg += f"\n┏━━━━━━━━━━━━━━━━━━╻"
                 msg += f"\n┣🗄 𝐍𝐚𝐦𝐞: <a href='{umess.link}'>{downloading_dir_name}</a>"
                 msg += f"\n┣📈 𝐒𝐭𝐚𝐭𝐮𝐬: <i>Downloading...📥</i>"
@@ -143,7 +142,10 @@ async def status_message_f(client, message):
                 msg += f"\n┣⚡️ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝: <code>{file.progress_string()}</code> <b>of</b> <code>{file.total_length_string()}</code>"
                 msg += f"\n┣📡 𝐒𝐩𝐞𝐞𝐝: <code>{file.download_speed_string()}</code>,"
                 msg += f"⏳️ 𝐄𝐓𝐀: <code>{file.eta_string()}</code>"
-                msg += f"\n┣⏰️ 𝐄𝐥𝐚𝐬𝐩𝐞𝐝: <code>{TimeFormatter((curTime - inTime) * 1000)}</code>"
+                try:
+                    inTime = datetime.timestamp(datetime.strptime(str(umess.date),"%Y-%m-%d %H:%M:%S"))
+                    msg += f"\n┣⏰️ 𝐄𝐥𝐚𝐬𝐩𝐞𝐝: <code>{TimeFormatter((curTime - inTime) * 1000)}</code>"
+                except: pass
                 msg += f"\n┣<b>👤 𝐔𝐬𝐞𝐫:</b> {umess.from_user.mention} ( #ID{umess.from_user.id} )"
                 msg += f"\n┣<b>⚠️ 𝐖𝐚𝐫𝐧:</b> <code>/warn {umess.from_user.id}</code>"
                 if is_file is None:

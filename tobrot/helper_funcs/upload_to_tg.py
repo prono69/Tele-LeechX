@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pyrogram.types as pyrogram
 import requests
+import sys
+import errno
 
 from telegram import ParseMode
 from pyrogram import enums
@@ -846,6 +848,11 @@ async def upload_single_file(
         except FloodWait as g:
             LOGGER.info(f"FloodWait : Sleeping {g.value}s")
             time.sleep(g.value)
+        except FileNotFoundError:
+            pass
+        except IOError as e:
+            if e.errno == errno.EPIPE:
+                pass
         except Exception as e:
             LOGGER.info(f"[ERROR] : {e}")
             try:

@@ -9,11 +9,10 @@
 
 
 from speedtest import Speedtest
-import logging
-from tobrot.helper_funcs.display_progress import humanbytes
 from pyrogram import enums
 
-torlog = logging.getLogger(__name__)
+from tobrot import LOGGER
+from tobrot.helper_funcs.display_progress import humanbytes
 
 async def get_speed(self, message):
     imspd = await message.reply("`Running Speed Test...`")
@@ -38,6 +37,8 @@ async def get_speed(self, message):
 ╚ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
 '''
     await imspd.delete()
-    await message.reply(string_speed, parse_mode=enums.ParseMode.HTML)
-    torlog.info(f'Server Speed result:-\nDL: {humanbytes(result["download"] / 8)}/s UL: {humanbytes(result["upload"] / 8)}/s')
-
+    try:
+        await message.reply_photo(path, string_speed, parse_mode=enums.ParseMode.HTML)
+    except:
+        await message.reply(string_speed, parse_mode=enums.ParseMode.HTML)
+    LOGGER.info(f'Server Speed result:-\nDL: {humanbytes(result["download"] / 8)}/s UL: {humanbytes(result["upload"] / 8)}/s')

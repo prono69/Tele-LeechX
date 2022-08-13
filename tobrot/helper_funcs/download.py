@@ -42,10 +42,9 @@ async def down_load_media_f(client, message):  # to be removed
             "Reply to a Telegram Media, to upload to the Cloud Drive."
         )
 
-
 async def download_tg(client, message):
+
     user_id = message.from_user.id
-    LOGGER.info(user_id)
     mess_age = await message.reply_text("<b>🔰Status : <i>Starting Downloading...📥</i></b>", quote=True)
     if not os.path.isdir(DOWNLOAD_LOCATION):
         os.makedirs(DOWNLOAD_LOCATION)
@@ -65,19 +64,20 @@ async def download_tg(client, message):
                 progress_args=(f"<b>🔰Status : <i>Downloading...📥</i></b>\n\n🗃<b> File Name</b>: `{file_name}`", c_time)
             )
         except Exception as g_e:
-            await mess_age.edit(str(g_e))
+            await mess_age.edit(f"⛔️ Error : {g_e}")
             LOGGER.error(g_e)
             return
-        end_t = datetime.now()
-        ms = (end_t - start_t).seconds
+        end_t = time.time()
+        ms = (end_t - start_t)
         LOGGER.info(the_real_download_location)
         await asyncio.sleep(2)
         if the_real_download_location:
             base_file_name = os.path.basename(the_real_download_location)
-            await mess_age.edit_text(
-                f"<b>🔰Status : <i>Downloaded ✅</i></b> \n\n🗃<b> File Name</b>:  <code>{base_file_name}</code> \n\n♻️<b> Time Taken</b>:  <u>{TimeFormatter(ms*1000)}</u>"
-            )
+            try:
+                await mess_age.edit_text(f"<b>🔰Status : <i>Downloaded ✅</i></b> \n\n🗃<b> File Name</b>:  <code>{base_file_name}</code> \n\n⏳️<b> Time Taken</b>:  <u>{TimeFormatter(ms)}</u>")
+            except MessageNotModified:
+                pass
         else:
-            await mess_age.edit_text("<b>⛔ Download Cancelled ⛔\n\n Some Error Happened Due to I am Hosted on Heroku, Try Again ⁉️</b>")
+            await mess_age.edit_text("<b>⛔ Download Cancelled ⛔\n\n User Cancelled or Telegram Download Error or Server Issue, Try Again ⁉️</b>")
             return None, mess_age
     return the_real_download_location, mess_age
