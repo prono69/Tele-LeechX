@@ -38,7 +38,7 @@ async def get_speed(self, message):
 '''
     await imspd.delete()
     try:
-        await message.reply_photo(path, string_speed, parse_mode=enums.ParseMode.HTML)
+        await message.reply_photo(path, caption=string_speed, parse_mode=enums.ParseMode.HTML)
     except:
         await message.reply(string_speed, parse_mode=enums.ParseMode.HTML)
     LOGGER.info(f'Server Speed result:-\nDL: {humanbytes(result["download"] / 8)}/s UL: {humanbytes(result["upload"] / 8)}/s')
