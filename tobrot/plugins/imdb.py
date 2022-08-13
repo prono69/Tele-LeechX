@@ -111,7 +111,6 @@ async def get_poster(query, bulk=False, id=False, file=None):
         plot = movie.get('plot outline')
     if plot and len(plot) > 800:
         plot = plot[:800] + "..."
-    LOGGER.info(movie)
     return {
         'title': movie.get('title'),
         'votes': movie.get('votes'),
@@ -142,7 +141,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'url':f'https://www.imdb.com/title/tt{movieid}',
         'url_cast':f'https://www.imdb.com/title/tt{movieid}/fullcredits#cast',
         'url_releaseinfo':f'https://www.imdb.com/title/tt{movieid}/releaseinfo',
-        'videos': list_to_str(movie.get("videos")),
+        'color_info': list_to_str(movie.get("color info")),
     }
 
 def list_to_str(k):
@@ -200,7 +199,6 @@ async def imdb_callback(bot, quer_y: CallbackQuery):
     if not template:
         template = DEF_IMDB_TEMPLATE
     if imdb and template != "":
-        LOGGER.info(imdb)
         caption = template.format(
             query = imdb['title'],
             title = imdb['title'],
@@ -232,7 +230,7 @@ async def imdb_callback(bot, quer_y: CallbackQuery):
             url = imdb['url'],
             url_cast = imdb['url_cast'],
             url_releaseinfo = imdb['url_releaseinfo'],
-            trailer = imdb['videos']
+            color_info = imdb['color_info']
             **locals()
         )
     else:
