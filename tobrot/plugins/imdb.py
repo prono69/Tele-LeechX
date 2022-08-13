@@ -141,7 +141,6 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'url':f'https://www.imdb.com/title/tt{movieid}',
         'url_cast':f'https://www.imdb.com/title/tt{movieid}/fullcredits#cast',
         'url_releaseinfo':f'https://www.imdb.com/title/tt{movieid}/releaseinfo',
-        'color_info': list_to_str(movie.get("color info")),
     }
 
 def list_to_str(k):
@@ -230,7 +229,6 @@ async def imdb_callback(bot, quer_y: CallbackQuery):
             url = imdb['url'],
             url_cast = imdb['url_cast'],
             url_releaseinfo = imdb['url_releaseinfo'],
-            color_info = imdb['color_info']
             **locals()
         )
     else:
