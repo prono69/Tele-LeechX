@@ -141,6 +141,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'url':f'https://www.imdb.com/title/tt{movieid}',
         'url_cast':f'https://www.imdb.com/title/tt{movieid}/fullcredits#cast',
         'url_releaseinfo':f'https://www.imdb.com/title/tt{movieid}/releaseinfo',
+        'videos': list_to_str(movie.get("videos")),
     }
 
 def list_to_str(k):
@@ -160,16 +161,16 @@ def list_to_hash(k, flagg=False):
         return ""
     elif len(k) == 1:
         if not flagg:
-            return str("#"+k[0].replace(" ", "_"))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_"))
         try:
             conflag = (conn.get(name=k[0])).flag
-            return str(f"{conflag} #" + k[0].replace(" ", "_"))
+            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_"))
         except AttributeError:
-            return str("#"+k[0].replace(" ", "_"))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_"))
     elif MAX_LIST_ELM:
         k = k[:int(MAX_LIST_ELM)]
         for elem in k:
-            ele = elem.replace(" ", "_")
+            ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
                 try:
                     conflag = (conn.get(name=elem)).flag
@@ -180,7 +181,7 @@ def list_to_hash(k, flagg=False):
         return f'{listing[:-2]} ...'
     else:
         for elem in k:
-            ele = elem.replace(" ", "_")
+            ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
                 conflag = (conn.get(name=elem)).flag
                 listing += f'{conflag} '
@@ -229,6 +230,7 @@ async def imdb_callback(bot, quer_y: CallbackQuery):
             url = imdb['url'],
             url_cast = imdb['url_cast'],
             url_releaseinfo = imdb['url_releaseinfo'],
+            trailer = imdb['videos']
             **locals()
         )
     else:
