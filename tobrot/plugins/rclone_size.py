@@ -8,7 +8,7 @@
 # All Right Reserved
 
 from asyncio import sleep as asleep, create_subprocess_exec, subprocess
-from os import path
+from os import path as opath
 from re import findall
 
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
