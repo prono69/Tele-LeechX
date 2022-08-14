@@ -10,7 +10,7 @@
 import asyncio
 import os
 import time
-from datetime import datetime
+
 from pathlib import Path
 from tobrot import DOWNLOAD_LOCATION, LOGGER, TELEGRAM_LEECH_UNZIP_COMMAND
 from tobrot.helper_funcs.create_compressed_archive import unzip_me, get_base_name
@@ -52,7 +52,7 @@ async def download_tg(client, message):
     if rep_mess is not None:
         file = [rep_mess.document, rep_mess.video, rep_mess.audio]
         file_name = [fi for fi in file if fi is not None][0].file_name
-        start_t = datetime.now()
+        start_t = time.time()
         download_location = str(Path("./").resolve()) + "/"
         c_time = time.time()
         prog = Progress(user_id, client, mess_age)

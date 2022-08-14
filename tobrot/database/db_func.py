@@ -9,11 +9,15 @@ class DatabaseManager:
         self.connect()
 
     def connect(self):
-        try:
-            self.conn = connect(DB_URI)
-            self.cur = self.conn.cursor()
-        except DatabaseError as error:
-            LOGGER.error(f"Error in PostgreSQL DB : {error}")
+        if DB_URI:
+            try:
+                self.conn = connect(DB_URI)
+                self.cur = self.conn.cursor()
+            except DatabaseError as error:
+                LOGGER.error(f"Error in PostgreSQL DB : {error}")
+                self.err = True
+        else: 
+            LOGGER.info(f'[DB] DATABASE_URL not Provided')
             self.err = True
 
     def disconnect(self):

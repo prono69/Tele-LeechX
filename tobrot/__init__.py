@@ -166,7 +166,6 @@ TELEGRAM_LEECH_COMMAND = getVar("TELEGRAM_LEECH_COMMAND", "tleech")
 TELEGRAM_LEECH_UNZIP_COMMAND = getVar("TELEGRAM_LEECH_UNZIP_COMMAND", "tleechunzip")
 
 #Bot Command [Miscs]  >>>>>>>>>>>
-CANCEL_COMMAND_G = getVar("CANCEL_COMMAND_G", "cancel")
 STATUS_COMMAND = getVar("STATUS_COMMAND", "status")
 SAVE_THUMBNAIL = getVar("SAVE_THUMBNAIL", "savethumb")
 CLEAR_THUMBNAIL = getVar("CLEAR_THUMBNAIL", "clearthumb")

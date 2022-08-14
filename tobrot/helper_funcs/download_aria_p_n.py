@@ -11,7 +11,7 @@ import sys
 from asyncio import create_subprocess_exec, subprocess, sleep as asleep
 from os import path as opath, rename as orename, walk as owalk
 from time import sleep as tsleep, time
-from aria2p import API as ariaAPI, Client as ariClient
+from aria2p import API as ariaAPI, Client as ariClient, client as aria2pclient
 from subprocess import check_output
 from pyrogram.errors import FloodWait, MessageNotModified
 from tobrot import (
@@ -89,7 +89,7 @@ def add_torrent(aria_instance, torrent_file_path, user_msg):
             return sagtus, g_id
         try:
             file = aria_instance.get_download(g_id)
-        except ariClient.ClientException as ee:
+        except aria2pclient.ClientException as ee:
             LOGGER.error(ee)
             return True, None
         torrent_file_path = file.name
@@ -201,7 +201,7 @@ async def call_apropriate_function(
         await asleep(1)
         try:
             file = aria_instance.get_download(err_message)
-        except ariClient.ClientException as ee:
+        except aria2pclient.ClientException as ee:
             LOGGER.error(ee)
             return True, None
         to_upload_file = file.name
@@ -332,7 +332,7 @@ async def check_progress_for_dl(aria2, gid, event, previous_message):
                         f"<b>🔰Status: <i>Downloaded 📥</i></b>:\n\n📨 <b><i>File Name</i></b>: \n`{file.name}`\n\n🗃 <b><i>Total Size</i></b>: 《 `{file.total_length_string()}` 》\n\n #Downloaded" 
                     )
                 return
-        except ariClient.ClientException:
+        except aria2pclient.ClientException:
             await event.reply(f"<i>⛔ Download Cancelled ⛔</i> :\n<code>{file.name} ({file.total_length_string()})</code>", quote=True)
             return
         except MessageNotModified as ep:
@@ -361,5 +361,7 @@ async def check_metadata(aria2, gid):
     if not file.followed_by_ids:
         return None
     new_gid = file.followed_by_ids[0]
+    with user_settings_lock:
+        user_settings[new_gid] = user_settings.pop(gid)
     LOGGER.info(f"Changing GID : {gid} to {new_gid}")
     return new_gid

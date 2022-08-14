@@ -24,17 +24,32 @@ async def get_speed(self, message):
     result = test.results.dict()
     path = (result['share'])
     string_speed = f'''
-<code>🌐 Server :</code>
-╠ <b>Name:</b> <code>{result['server']['name']}</code>
-╠ <b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
-╠ <b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
-╚ <b>ISP:</b> <code>{result['client']['isp']}</code>
-
-<code>🧭 SpeedTest Results :</code>
-╠ <b>Upload:</b> <code>{humanbytes(result['upload'] / 8)}</code>
-╠ <b>Download:</b>  <code>{humanbytes(result['download'] / 8)}</code>
-╠ <b>Ping:</b> <code>{result['ping']} ms</code>
-╚ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
+┏━━━━━━━━━━━━━━━━━━╻
+┣━━🚀 𝐒𝐩𝐞𝐞𝐝𝐭𝐞𝐬𝐭 𝐈𝐧𝐟𝐨:
+┣ <b>Upload:</b> <code>{humanbytes(result['upload'] / 8)}/s</code>
+┣ <b>Download:</b>  <code>{humanbytes(result['download'] / 8)}/s</code>
+┣ <b>Ping:</b> <code>{result['ping']} ms</code>
+┣ <b>Time:</b> <code>{result['timestamp']}</code>
+┣ <b>Data Sent:</b> <code>{humanbytes(result['bytes_sent'])}</code>
+┣ <b>Data Received:</b> <code>{humanbytes(result['bytes_received'])}</code>
+┃
+┣━━🌐 𝐒𝐩𝐞𝐞𝐝𝐭𝐞𝐬𝐭 𝐒𝐞𝐫𝐯𝐞𝐫:
+┣ <b>Name:</b> <code>{result['server']['name']}</code>
+┣ <b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
+┣ <b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
+┣ <b>Latency:</b> <code>{result['server']['latency']}</code>
+┣ <b>Latitude:</b> <code>{result['server']['lat']}</code>
+┣ <b>Longitude:</b> <code>{result['server']['lon']}</code>
+┃
+┣━━👤 𝐂𝐥𝐢𝐞𝐧𝐭 𝐃𝐞𝐭𝐚𝐢𝐥𝐬:
+┣ <b>IP Address:</b> <code>{result['client']['ip']}</code>
+┣ <b>Latitude:</b> <code>{result['client']['lat']}</code>
+┣ <b>Longitude:</b> <code>{result['client']['lon']}</code>
+┣ <b>Country:</b> <code>{result['client']['country']}</code>
+┣ <b>ISP:</b> <code>{result['client']['isp']}</code>
+┣ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
+┃
+┗━━━━━━━━━━━━━━━━━━╹
 '''
     await imspd.delete()
     try:

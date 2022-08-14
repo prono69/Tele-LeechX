@@ -313,7 +313,7 @@ if __name__ == "__main__":
     ##############################################################################
     cancel_message_handler = MessageHandler(
         cancel_message_f,
-        filters=filters.command([f"{BotCommands.CancelCommand}", f"{BotCommands.CancelCommand}@{bot.username}"])
+        filters=filters.regex(r'^/cancel($|\_([a-z]|[0-9])+($|\@\S+$))')
         & filters.chat(chats=AUTH_CHANNEL),
     )
     app.add_handler(cancel_message_handler)

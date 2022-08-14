@@ -60,22 +60,26 @@ class CloneHelper:
             if USER_DTS:
                 process = await mes.reply_text(f"{def_text}**📎 GDToT Link** : `{mess[0]}`\n\n `Generating . . .`")
             info_parsed = gdtot(mess[0])
-            if USER_DTS:
-                if info_parsed['gdrive_link']:
-                    await process.edit_text(f"{def_text}**📎GDToT Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{info_parsed['gdrive_link']}`")
-                else:
+            if info_parsed['gdrive_link']:
+                message = info_parsed['gdrive_link']
+                if USER_DTS:
+                    await process.edit_text(f"{def_text}**📎GDToT Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{message}`")
+            else:
+                if USER_DTS:
                     await process.edit_text(f"{def_text}**📎GDToT Link** : `{mess[0]}`\n**⛔️ Error** : `{info_parsed['message']}`")
-                    return
+                return
         elif is_appdrive_link(mess[0]):
             if USER_DTS:
                 process = await mes.reply_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n\n `Generating . . .`")
             info_parsed = appdrive_dl(mess[0], is_direct=False)
-            if USER_DTS:
-                if info_parsed['gdrive_link']:
-                    await process.edit_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{info_parsed['gdrive_link']}`")
-                else:
+            if info_parsed['gdrive_link']:
+                message = info_parsed['gdrive_link']
+                if USER_DTS:
+                    await process.edit_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n**☁️ GDrive Link** : `{message}`")
+            else:
+                if USER_DTS:
                     await process.edit_text(f"{def_text}**📎 AppDrive Link** : `{mess[0]}`\n**⛔️ Error** : `{info_parsed['error_message']}`")
-                    return
+                return
         elif "kolop.icu" in mess[0]:
             if USER_DTS:
                 process = await mes.reply_text(f"{def_text}**📎 Kolop Link** : `{mess[0]}`\n\n `Generating . . .`")
@@ -250,7 +254,12 @@ class CloneHelper:
         pro = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
-        p, e = await pro.communicate()
+        try:
+            p, e = await pro.communicate()
+        except 'userRateLimitExceeded' in Exception:
+            self.lsg.edit_text("‼️ **ERROR** ‼️\n\n Error 403: User rate limit exceeded.")
+        except Exception as err:
+            self.lsg.edit_text(f"‼️ **ERROR** ‼️\n\n {err}")
         self.out = p
         LOGGER.info(self.out)
         err = e.decode()

@@ -35,10 +35,10 @@ from tobrot import (
     FINISHED_PROGRESS_STR,
     UN_FINISHED_PROGRESS_STR,
     UPDATES_CHANNEL,
-    CANCEL_COMMAND_G,
     LOG_FILE_NAME,
     DB_URI,
-    user_settings
+    user_settings,
+    bot
     )
 from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.helper_funcs.download_aria_p_n import aria_start
@@ -144,15 +144,15 @@ async def status_message_f(client, message):
                 msg += f"⏳️ 𝐄𝐓𝐀: <code>{file.eta_string()}</code>"
                 try:
                     inTime = datetime.timestamp(datetime.strptime(str(umess.date),"%Y-%m-%d %H:%M:%S"))
-                    msg += f"\n┣⏰️ 𝐄𝐥𝐚𝐬𝐩𝐞𝐝: <code>{TimeFormatter((curTime - inTime) * 1000)}</code>"
+                    msg += f"\n┣⏰️ 𝐄𝐥𝐚𝐩𝐬𝐞𝐝: <code>{TimeFormatter((curTime - inTime) * 1000)}</code>"
                 except: pass
                 msg += f"\n┣<b>👤 𝐔𝐬𝐞𝐫:</b> {umess.from_user.mention} ( #ID{umess.from_user.id} )"
                 msg += f"\n┣<b>⚠️ 𝐖𝐚𝐫𝐧:</b> <code>/warn {umess.from_user.id}</code>"
                 if is_file is None:
                     msg += f"\n┣📊 𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
                 else:
-                    msg += f"\n┣🍳𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🔰𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
-                msg += f"\n┣🚫 𝐓𝐨 𝐂𝐚𝐧𝐜𝐞𝐥: <code>/{CANCEL_COMMAND_G} {file.gid}</code>"
+                    msg += f"\n┣🍇𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🫒𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
+                msg += f"\n┣🚫 𝐓𝐨 𝐂𝐚𝐧𝐜𝐞𝐥: /cancel_{file.gid}"
                 msg += f"\n┗━━━━━━━━━━━━━━━━━━╹\n"
 
         ms_g = "◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
@@ -197,13 +197,15 @@ async def status_message_f(client, message):
                 await asleep(EDIT_SLEEP_TIME_OUT)
                 prev_mess = msg
 
-
 async def cancel_message_f(client, message):
-    if len(message.command) > 1:
+    if '_' in message.text:
         i_m_s_e_g = await message.reply_text("<code>Checking..⁉️</code>", quote=True)
         aria_i_p = await aria_start()
-        g_id = message.command[1].strip()
-        LOGGER.info(g_id)
+        gidData = (message.text).split("_")
+        g_id = gidData[1].strip()
+        if g_id.endswith(f'@{bot.username}'):
+            g_id = g_id.replace(f'@{bot.username}', '')
+        LOGGER.info(f"Cancel GID: {g_id}")
         try:
             downloads = aria_i_p.get_download(g_id)
             name = downloads.name
@@ -358,6 +360,7 @@ async def upload_log_file(client, message):
             Loglines = Loglines.replace('"', '')
             textLog = startLine+Loglines+endLine
             await message.reply_text(textLog,
+                disable_web_page_preview=True,
                 parse_mode=enums.ParseMode.DISABLED #tg Sucks
             )
         except Exception as err:
