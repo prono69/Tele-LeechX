@@ -8,6 +8,7 @@
 # All Right Reserved
 
 import sys
+from urllib.request import urlretrieve
 from asyncio import create_subprocess_exec, subprocess, sleep as asleep
 from os import path as opath, rename as orename, walk as owalk
 from time import sleep as tsleep, time
@@ -84,17 +85,10 @@ def add_torrent(aria_instance, torrent_file_path, user_msg):
         else:
             return True, download.gid
     elif (torrent_file_path.lower()).startswith("https") and (not opath.exists(torrent_file_path)):
-        sagtus, g_id = add_url(aria_instance, torrent_file_path, None, user_msg)
-        if not sagtus:
-            return sagtus, g_id
+        torrent_file_name = (torrent_file_path.split('/'))[-1]
+        urlretrieve(torrent_file_path, f"/app/{torrent_file_name}")
         try:
-            file = aria_instance.get_download(g_id)
-        except aria2pclient.ClientException as ee:
-            LOGGER.error(ee)
-            return True, None
-        torrent_file_path = file.name
-        try:
-            sagtus, err_message = add_torrent(aria_instance, torrent_file_path, user_msg)
+            sagtus, err_message = add_torrent(aria_instance, torrent_file_name, user_msg)
         except Exception as e:
             return False, f"⛔ **FAILED** ⛔ \n\n<b>⌧ Your Link is Slow to Process .</b>\n⌧ {e}"
         else:
