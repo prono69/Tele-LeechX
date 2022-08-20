@@ -12,6 +12,7 @@ from speedtest import Speedtest
 from pyrogram import enums
 
 from tobrot import LOGGER
+from tobrot.bot_theme.themes import BotTheme
 from tobrot.helper_funcs.display_progress import humanbytes
 
 async def get_speed(self, message):
@@ -23,34 +24,27 @@ async def get_speed(self, message):
     test.results.share()
     result = test.results.dict()
     path = (result['share'])
-    string_speed = f'''
-┏━━━━━━━━━━━━━━━━━━╻
-┣━━🚀 𝐒𝐩𝐞𝐞𝐝𝐭𝐞𝐬𝐭 𝐈𝐧𝐟𝐨:
-┣ <b>Upload:</b> <code>{humanbytes(result['upload'] / 8)}/s</code>
-┣ <b>Download:</b>  <code>{humanbytes(result['download'] / 8)}/s</code>
-┣ <b>Ping:</b> <code>{result['ping']} ms</code>
-┣ <b>Time:</b> <code>{result['timestamp']}</code>
-┣ <b>Data Sent:</b> <code>{humanbytes(result['bytes_sent'])}</code>
-┣ <b>Data Received:</b> <code>{humanbytes(result['bytes_received'])}</code>
-┃
-┣━━🌐 𝐒𝐩𝐞𝐞𝐝𝐭𝐞𝐬𝐭 𝐒𝐞𝐫𝐯𝐞𝐫:
-┣ <b>Name:</b> <code>{result['server']['name']}</code>
-┣ <b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
-┣ <b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
-┣ <b>Latency:</b> <code>{result['server']['latency']}</code>
-┣ <b>Latitude:</b> <code>{result['server']['lat']}</code>
-┣ <b>Longitude:</b> <code>{result['server']['lon']}</code>
-┃
-┣━━👤 𝐂𝐥𝐢𝐞𝐧𝐭 𝐃𝐞𝐭𝐚𝐢𝐥𝐬:
-┣ <b>IP Address:</b> <code>{result['client']['ip']}</code>
-┣ <b>Latitude:</b> <code>{result['client']['lat']}</code>
-┣ <b>Longitude:</b> <code>{result['client']['lon']}</code>
-┣ <b>Country:</b> <code>{result['client']['country']}</code>
-┣ <b>ISP:</b> <code>{result['client']['isp']}</code>
-┣ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
-┃
-┗━━━━━━━━━━━━━━━━━━╹
-'''
+    string_speed = ((BotTheme(message.from_user.id)).SPEEDTEST_MSG).format(
+        upload = humanbytes(result['upload'] / 8),
+        download = humanbytes(result['download'] / 8),
+        ping = result['ping'],
+        timestamp = result['timestamp'],
+        bytes_sent = humanbytes(result['bytes_sent']),
+        bytes_received = humanbytes(result['bytes_received']),
+        name = result['server']['name'],
+        country = result['server']['country'],
+        cc = result['server']['cc'],
+        sponsor = result['server']['sponsor'],
+        latency = result['server']['latency'],
+        serverlat = result['server']['lat'],
+        serverlon = result['server']['lon'],
+        ip = result['client']['ip'],
+        clientlat = result['client']['lat'],
+        clientlon = result['client']['lon'],
+        clicountry = result['client']['country'],
+        isp = result['client']['isp'],
+        isprating = result['client']['isprating']
+    )
     await imspd.delete()
     try:
         await message.reply_photo(path, caption=string_speed, parse_mode=enums.ParseMode.HTML)

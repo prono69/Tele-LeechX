@@ -33,7 +33,7 @@ from tobrot.helper_funcs.create_compressed_archive import (
 )
 from tobrot.helper_funcs.upload_to_tg import upload_to_gdrive, upload_to_tg
 from tobrot.helper_funcs.download import download_tg
-
+from tobrot.bot_theme.themes import BotTheme
 from tobrot.helper_funcs.direct_link_generator import url_link_generate
 from tobrot.helper_funcs.exceptions import DirectDownloadLinkException
 from tobrot.plugins.custom_utils import *
@@ -44,7 +44,7 @@ sys.setrecursionlimit(10 ** 4)
 
 async def aria_start():
     TRACKERS = check_output("curl -Ns https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt https://ngosang.github.io/trackerslist/trackers_all_http.txt https://newtrackon.com/api/all https://raw.githubusercontent.com/hezhijie0327/Trackerslist/main/trackerslist_tracker.txt | awk '$0' | tr '\n\n' ','", shell=True).decode('utf-8').rstrip(',')
-    aria2_daemon_start_cmd = ["extra-api", "--conf-path=/app/tobrot/aria2/aria2.conf", f"--rpc-listen-port={ARIA_TWO_STARTED_PORT}", f"--bt-stop-timeout={MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START}", f"--bt-tracker=[{TRACKERS}]"]
+    aria2_daemon_start_cmd = ["chrome", "--conf-path=/app/tobrot/aria2/aria2.conf", f"--rpc-listen-port={ARIA_TWO_STARTED_PORT}", f"--bt-stop-timeout={MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START}", f"--bt-tracker=[{TRACKERS}]"]
     #f"--dir={DOWNLOAD_LOCATION}", "--disk-cache=0", "--seed-ratio=0.01"
     LOGGER.info("[ARIA2C] Daemon Initiated ")
 
@@ -181,14 +181,14 @@ async def call_apropriate_function(
         LOGGER.info(err_message)
 
         await check_progress_for_dl(
-            aria_instance, err_message, sent_message_to_update_tg_p, None
+            aria_instance, err_message, sent_message_to_update_tg_p, None, user_message
         )
         if incoming_link.startswith("magnet:"):
             err_message = await check_metadata(aria_instance, err_message)
             await asleep(1)
             if err_message is not None:
                 await check_progress_for_dl(
-                    aria_instance, err_message, sent_message_to_update_tg_p, None
+                    aria_instance, err_message, sent_message_to_update_tg_p, None, user_message
                 )
             else:
                 return False, "can't get metadata \n\n#MetaDataError"
@@ -226,9 +226,9 @@ async def call_apropriate_function(
             LOGGER.info(
                 f"Can't extract {opath.basename(to_upload_file)}, Uploading the same file"
             )
-
+    u_id = user_message.from_user.id
     if to_upload_file:
-        prefix = PRE_DICT.get(user_message.from_user.id, "")
+        prefix = PRE_DICT.get(u_id, "")
         CUSTOM_FILE_NAME = prefix
 
         if CUSTOM_FILE_NAME != "":
@@ -269,14 +269,23 @@ async def call_apropriate_function(
             try:
                 timeuti = TimeFormatter((end_upload - start_upload) * 1000)
                 message_to_send = ""
-                mention_req_user = f"┏ 🗃 𝙇𝙚𝙚𝙘𝙝 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙚 !! 🗃\n┃\n┣ 👤 𝐔𝐬𝐞𝐫 : {u_men} ( #ID{user_id} )\n┣⏳️ 𝐓𝐢𝐦𝐞 𝐓𝐚𝐤𝐞𝐧 : {timeuti}\n┃\n"
-                message_credits = f"┃\n┃ #FXUploads\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
+                mention_req_user = ((BotTheme(u_id)).TOP_LIST_FILES_MSG).format(
+                    user_id = u_id,
+                    u_men = u_men,
+                    timeuti = timeuti
+                )                
+                message_credits = ((BotTheme(u_id)).BOTTOM_LIST_FILES_MSG).format(
+                    UPDATES_CHANNEL = UPDATES_CHANNEL
+                )
                 for key_f_res_se in final_response:
                     local_file_name = key_f_res_se
                     message_id = final_response[key_f_res_se]
                     channel_id = str(sent_message_to_update_tg_p.chat.id)[4:]
                     private_link = f"https://t.me/c/{channel_id}/{message_id}"
-                    message_to_send += f"┣ ⇒ <a href='{private_link}'>{local_file_name}</a>\n"
+                    message_to_send += ((BotTheme(u_id)).SINGLE_LIST_FILES_MSG).format(
+                        private_link = private_link,
+                        local_file_name = local_file_name
+                    )
                     if len(mention_req_user.encode('utf-8') + message_to_send.encode('utf-8') + message_credits.encode('utf-8')) > 4000:
                         tsleep(1.5)
                         await user_message.reply_text(
@@ -294,7 +303,7 @@ async def call_apropriate_function(
 
 
 # https://github.com/jaskaranSM/UniBorg/blob/6d35cf452bce1204613929d4da7530058785b6b1/stdplugins/aria.py#L136-L164
-async def check_progress_for_dl(aria2, gid, event, previous_message):
+async def check_progress_for_dl(aria2, gid, event, previous_message, user_message):
     while True:
         try:
             file = aria2.get_download(gid)
@@ -322,9 +331,10 @@ async def check_progress_for_dl(aria2, gid, event, previous_message):
                     f"Downloaded Successfully : `{file.name} ({file.total_length_string()})` "
                 )
                 if not file.is_metadata:
-                    await event.edit(
-                        f"<b>🔰Status: <i>Downloaded 📥</i></b>:\n\n📨 <b><i>File Name</i></b>: \n`{file.name}`\n\n🗃 <b><i>Total Size</i></b>: 《 `{file.total_length_string()}` 》\n\n #Downloaded" 
-                    )
+                    await event.edit(((BotTheme(user_message.from_user.id)).DOWN_COM_MSG).format(
+                        filename = file.name,
+                        size = file.total_length_string()
+                    ))
                 return
         except aria2pclient.ClientException:
             await event.reply(f"<i>⛔ Download Cancelled ⛔</i> :\n<code>{file.name} ({file.total_length_string()})</code>", quote=True)

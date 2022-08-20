@@ -53,6 +53,7 @@ from tobrot import (
 )
 if isUserPremium:
     from tobrot import userBot
+from tobrot.bot_theme.themes import BotTheme
 from tobrot.helper_funcs.help_Nekmo_ffmpeg import copy_file
 from tobrot.helper_funcs.display_progress import humanbytes, Progress
 from tobrot.helper_funcs.help_Nekmo_ffmpeg import take_screen_shot
@@ -108,8 +109,9 @@ async def upload_to_tg(
         LOGGER.info(directory_contents)
         new_m_esg = message
         if not message.photo:
-            new_m_esg = await message.reply_text(
-                f"<b><i>🛠 Extracting : </i></b> <code>{len(directory_contents)}</code> <b>File(s)</b>",
+            new_m_esg = await message.reply_text(((BotTheme(from_user)).EXTRACT_MSG).format(
+                    no_of_con = len(directory_contents)
+                ),
                 quote=True
             )
         for single_file in directory_contents:
@@ -372,7 +374,7 @@ async def upload_single_file(
         DOWNLOAD_LOCATION, "thumbnails", str(from_user) + ".jpg"
     )
 
-    dyna_user_config_upload_as_doc = user_specific_config.get(from_user, False)
+    __uploadAsDoc = user_specific_config.get(from_user, False)
         
     global PRM_LOG
     if isUserPremium and (not PRM_LOG) and LEECH_LOG:
@@ -387,18 +389,18 @@ async def upload_single_file(
         EXCEP_CHATS = AUTH_CHANNEL
         LOGGER.info("[IDLE] Switching AUTH_CHANNEL to EXCEP_CHATS")
 
-    if UPLOAD_AS_DOC or dyna_user_config_upload_as_doc:
+    if UPLOAD_AS_DOC or __uploadAsDoc:
         thumb = None
         thumb_image_path = None
         if os.path.exists(thumbnail_location):
             thumb_image_path = await copy_file(
                 thumbnail_location, os.path.dirname(os.path.abspath(local_file_name))
             )
-            thumb = thumb_image_path
+        thumb = thumb_image_path
         message_for_progress_display = message
         if not edit_media:
             message_for_progress_display = await message.reply_text(
-                "<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: <code>{}</code>".format(os.path.basename(local_file_name))
+                ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = os.path.basename(local_file_name))
             )
             prog = Progress(from_user, client, message_for_progress_display)
         LOGGER.info(f"Premium Active : {prm_atv}")
@@ -411,7 +413,7 @@ async def upload_single_file(
                 disable_notification=True,
                 progress=prog.progress_for_pyrogram,
                 progress_args=(
-                    f"◆━━━━━━◆ ❃ ◆━━━━━━◆\n\n┏━━━━━━━━━━━━━━━━╻\n┣⚡️ 𝐅𝐢𝐥𝐞𝐧𝐚𝐦𝐞 : `{os.path.basename(local_file_name)}`",
+                    ((BotTheme(from_user)).TOP_PROG_MSG).format(base_file_name = os.path.basename(local_file_name)),
                     start_time,
                 ),
             )
@@ -427,7 +429,7 @@ async def upload_single_file(
                     disable_notification=True,
                     progress=prog.progress_for_pyrogram,
                     progress_args=(
-                        f"◆━━━━━━◆ ❃ ◆━━━━━━◆\n\n┏━━━━━━━━━━━━━━━━╻\n┣⚡️ 𝐅𝐢𝐥𝐞𝐧𝐚𝐦𝐞 : `{os.path.basename(local_file_name)}`",
+                        ((BotTheme(from_user)).TOP_PROG_MSG).format(base_file_name = os.path.basename(local_file_name)),
                         start_time,
                     ),
                 )
@@ -496,7 +498,7 @@ async def upload_single_file(
             except FloodWait as gf:
                 time.sleep(gf.value)
             except Exception as rr:
-                LOGGER.warning(str(rr))
+                LOGGER.warning(rr)
         os.remove(local_file_name)
         if thumb is not None:
             os.remove(thumb)
@@ -505,7 +507,7 @@ async def upload_single_file(
             message_for_progress_display = message
             if not edit_media:
                 message_for_progress_display = await message.reply_text(
-                    "<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: <code>{}</code>".format(os.path.basename(local_file_name))
+                    ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = os.path.basename(local_file_name))
                 )
                 prog = Progress(from_user, client, message_for_progress_display)
             if local_file_name.upper().endswith(VIDEO_SUFFIXES):
@@ -542,28 +544,21 @@ async def upload_single_file(
                             thum.write(req.content)
                         img = Image.open(thumb_image_path).convert("RGB")
                         img.save(thumb_image_path, format="jpeg")
-                    # get the correct width, height, and duration for videos greater than 10MB
                     if os.path.exists(thumb_image_path):
                         metadata = extractMetadata(createParser(thumb_image_path))
                         if metadata.has("width"):
                             width = metadata.get("width")
                         if metadata.has("height"):
                             height = metadata.get("height")
-                        # ref: https://t.me/PyrogramChat/44663
-                        # https://stackoverflow.com/a/21669827/4723940
-                        Image.open(thumb_image_path).convert("RGB").save(
-                            thumb_image_path
-                        )
+                        Image.open(thumb_image_path).convert("RGB").save(thumb_image_path)
                         img = Image.open(thumb_image_path)
-                        # https://stackoverflow.com/a/37631799/4723940
                         img.resize((320, height))
                         img.save(thumb_image_path, "JPEG")
-                        # https://pillow.readthedocs.io/en/3.1.x/reference/Image.html#create-thumbnails
-                #
+
                 thumb = None
                 if thumb_image_path is not None and os.path.isfile(thumb_image_path):
                     thumb = thumb_image_path
-                # send video
+
                 if edit_media and message.photo:
                     await asyncio.sleep(EDIT_SLEEP_TIME_OUT)
                     sent_message = await message.edit_media(
@@ -593,7 +588,7 @@ async def upload_single_file(
                             disable_notification=True,
                             progress=prog.progress_for_pyrogram,
                             progress_args=(
-                                f"<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: `{os.path.basename(local_file_name)}`",
+                                ((BotTheme(from_user)).TOP_PROG_MSG).format(base_file_name = os.path.basename(local_file_name)),
                                 start_time,
                             ),
                          )
@@ -613,7 +608,7 @@ async def upload_single_file(
                                 disable_notification=True,
                                 progress=prog.progress_for_pyrogram,
                                 progress_args=(
-                                    f"◆━━━━━━◆ ❃ ◆━━━━━━◆\n\n┏━━━━━━━━━━━━━━━━╻\n┣⚡️ 𝐅𝐢𝐥𝐞𝐧𝐚𝐦𝐞 : `{os.path.basename(local_file_name)}`",
+                                    ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = os.path.basename(local_file_name)),
                                     start_time,
                                 ),
                             )
@@ -662,7 +657,7 @@ async def upload_single_file(
                             disable_notification=True,
                             progress=prog.progress_for_pyrogram,
                             progress_args=(
-                                f"<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: `{os.path.basename(local_file_name)}`",
+                                ((BotTheme(from_user)).TOP_PROG_MSG).format(base_file_name = os.path.basename(local_file_name)),
                                 start_time,
                             ),
                          )
@@ -739,7 +734,7 @@ async def upload_single_file(
                         disable_notification=True,
                         progress=prog.progress_for_pyrogram,
                         progress_args=(
-                            f"<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: `{os.path.basename(local_file_name)}`",
+                            ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = os.path.basename(local_file_name)),
                             start_time,
                         ),
                     )
@@ -773,13 +768,9 @@ async def upload_single_file(
                         thumbnail_location,
                         os.path.dirname(os.path.abspath(local_file_name)),
                     )
-                # if a file, don't upload "thumb"
-                # this "diff" is a major derp -_- 😔😭😭
                 thumb = None
                 if thumb_image_path is not None and os.path.isfile(thumb_image_path):
                     thumb = thumb_image_path
-                #
-                # send document
                 if edit_media and message.photo:
                     sent_message = await message.edit_media(
                         media=InputMediaDocument(
@@ -799,7 +790,7 @@ async def upload_single_file(
                             disable_notification=True,
                             progress=prog.progress_for_pyrogram,
                             progress_args=(
-                                f"<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: `{os.path.basename(local_file_name)}`",
+                                ((BotTheme(from_user)).TOP_PROG_MSG).format(base_file_name = os.path.basename(local_file_name)),
                                 start_time,
                             ),
                         )
@@ -813,7 +804,7 @@ async def upload_single_file(
                             disable_notification=True,
                             progress=prog.progress_for_pyrogram,
                             progress_args=(
-                                f"<b>🔰Status : <i>Starting Uploading...📤</i></b>\n\n🗃<b> File Name</b>: `{os.path.basename(local_file_name)}`",
+                                ((BotTheme(from_user)).TOP_PROG_MSG).format(base_file_name = os.path.basename(local_file_name)),
                                 start_time,
                             ),
                         )

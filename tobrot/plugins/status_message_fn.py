@@ -38,7 +38,8 @@ from tobrot import (
     LOG_FILE_NAME,
     DB_URI,
     user_settings,
-    bot
+    bot,
+    HALF_FINISHED
     )
 from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.helper_funcs.download_aria_p_n import aria_start
@@ -103,6 +104,7 @@ def bot_button_stats():
 ┗━━━━━━━━━━━━━━━━╹'''
 
 async def status_message_f(client, message):
+    u_id_ = message.from_user.id
     aria_i_p = await aria_start()
     to_edit = await message.reply("🧭 𝐆𝐞𝐭𝐭𝐢𝐧𝐠 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 𝐒𝐭𝐚𝐭𝐮𝐬 . .")
     chat_id = int(message.chat.id)
@@ -129,45 +131,61 @@ async def status_message_f(client, message):
             if file.status == "active":
                 umess = user_settings[file.gid]
                 percentage = int(file.progress_string(0).split('%')[0])
-                prog = "[{0}{1}]".format(
+                digits = [int(x) for x in str(("{}").format("%.2d" % percentage))]
+                prog = "[{0}{1}{2}]".format(
                     "".join([FINISHED_PROGRESS_STR for _ in range(floor(percentage / 5))]),
-                    "".join([UN_FINISHED_PROGRESS_STR for _ in range(20 - floor(percentage / 5))])
+                    HALF_FINISHED if floor(digits[1]) > 5 else UN_FINISHED_PROGRESS_STR,
+                    "".join([UN_FINISHED_PROGRESS_STR for _ in range(19 - floor(percentage / 5))])
                 )
                 is_file = file.seeder
                 curTime = time()
-                msg += f"\n┏━━━━━━━━━━━━━━━━━━╻"
-                msg += f"\n┣🗄 𝐍𝐚𝐦𝐞: <a href='{umess.link}'>{downloading_dir_name}</a>"
-                msg += f"\n┣📈 𝐒𝐭𝐚𝐭𝐮𝐬: <i>Downloading...📥</i>"
-                msg += f"\n┃<code>{prog}</code>"
-                msg += f"\n┣⚡️ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝: <code>{file.progress_string()}</code> <b>of</b> <code>{file.total_length_string()}</code>"
-                msg += f"\n┣📡 𝐒𝐩𝐞𝐞𝐝: <code>{file.download_speed_string()}</code>,"
-                msg += f"⏳️ 𝐄𝐓𝐀: <code>{file.eta_string()}</code>"
+                msg += ((BotTheme(u_id_)).STATUS_MSG_1).format(
+                    mess_link = umess.link,
+                    file_name = downloading_dir_name,
+                    progress = prog,
+                    prog_string = file.progress_string(),
+                    total_string = file.total_length_string(),
+                    speed_string = file.download_speed_string(),
+                    eta_string = file.eta_string()
+                )
                 try:
                     inTime = datetime.timestamp(datetime.strptime(str(umess.date),"%Y-%m-%d %H:%M:%S"))
-                    msg += f"\n┣⏰️ 𝐄𝐥𝐚𝐩𝐬𝐞𝐝: <code>{TimeFormatter((curTime - inTime) * 1000)}</code>"
+                    msg += ((BotTheme(u_id_)).STATUS_MSG_2).format(
+                        etime = TimeFormatter((curTime - inTime) * 1000)
+                    )
                 except: pass
-                msg += f"\n┣<b>👤 𝐔𝐬𝐞𝐫:</b> {umess.from_user.mention} ( #ID{umess.from_user.id} )"
-                msg += f"\n┣<b>⚠️ 𝐖𝐚𝐫𝐧:</b> <code>/warn {umess.from_user.id}</code>"
+                msg += ((BotTheme(u_id_)).STATUS_MSG_3).format(
+                    u_men = umess.from_user.mention,
+                    uid = umess.from_user.id
+                )
                 if is_file is None:
-                    msg += f"\n┣📊 𝐂𝐨𝐧𝐧𝐞𝐜𝐭𝐢𝐨𝐧𝐬: <code>{file.connections}</code>"
+                    msg += ((BotTheme(u_id_)).STATUS_MSG_4).format(
+                        connections = file.connections
+                    )
                 else:
-                    msg += f"\n┣🍇𝐒𝐞𝐞𝐝𝐬: <code>{file.num_seeders}</code> ┃ 🫒𝐏𝐞𝐞𝐫𝐬: <code>{file.connections}</code>"
-                msg += f"\n┣🚫 𝐓𝐨 𝐂𝐚𝐧𝐜𝐞𝐥: /cancel_{file.gid}"
-                msg += f"\n┗━━━━━━━━━━━━━━━━━━╹\n"
+                    msg += ((BotTheme(u_id_)).STATUS_MSG_5).format(
+                        num_seeders = file.num_seeders,
+                        connections = file.connections
+                    )
+                msg += ((BotTheme(message.from_user.id)).STATUS_MSG_6).format(
+                    gid = file.gid
+                )
 
-        ms_g = "◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
+        ms_g = (BotTheme(u_id_)).BOTTOM_STATUS_MSG
         if UPDATES_CHANNEL:
             ms_g += f"\n♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
         umen = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-        mssg = f"\n❣𝙎𝙩𝙖𝙩𝙪𝙨 : {umen} (<code>{message.from_user.id}</code>)\n◆━━━━━━━◆ ❃ ◆━━━━━━━◆"
-
+        mssg = ((BotTheme(u_id_)).TOP_STATUS_MSG).format(
+            umen = umen,
+            uid = u_id_
+        )
         button_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton('Sᴛᴀᴛs\nCʜᴇᴄᴋ', callback_data="stats"),
              InlineKeyboardButton('Cʟᴏsᴇ', callback_data="admin_close")]
         ])
 
         if msg == "":
-            msg = f"\n┏━━━━━━━━━━━━━━━━━━╻\n┃\n┃ ⚠️ <b>No Active, Queued or Paused \n┃ Torrents / Direct Links ⚠️</b>\n┃\n┗━━━━━━━━━━━━━━━━━━╹\n"
+            msg = (BotTheme(u_id_)).DEF_STATUS_MSG
             msg = mssg + "\n" + msg + "\n" + ms_g
             await to_edit.edit(msg, reply_markup=button_markup)
             await asleep(EDIT_SLEEP_TIME_OUT)

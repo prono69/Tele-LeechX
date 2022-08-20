@@ -9,8 +9,9 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from tobrot import LOGGER, UPDATES_CHANNEL
 from tobrot.helper_funcs.display_progress import humanbytes_int
 from tobrot.plugins.mediainfo import post_to_telegraph
+from tobrot.bot_theme.themes import BotTheme
 
-nexPage = False #ToDo
+nexPage = False
 nexPageToken = "" 
 
 def authorization_token(username, password):
@@ -150,19 +151,17 @@ async def index_scrape(client, message):
     title = "Index Link Scrapper"
     tgh_link = post_to_telegraph(title, body_text)
 
-    textup = f"""
-┏━📮  𝗜𝗻𝗱𝗲𝘅 𝗦𝗰𝗿𝗮𝗽𝗲 𝗥𝗲𝘀𝘂𝗹𝘁 :
-┃
-┣👤 𝐔𝐬𝐞𝐫 : {u_men} ( #ID{user_id_} )
-┃
-┣🔗 𝗨𝗥𝗟 : <code> {url} </code>
-┃
-┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹
-"""
     markup_ = InlineKeyboardMarkup([[InlineKeyboardButton(text="Iɴᴅᴇx Sᴄʀᴀᴘᴇ Lɪɴᴋ", url=tgh_link)]])
 
     await lm.delete()
-    await message.reply_text(text=textup, reply_markup=markup_)
+    await message.reply_text(text=((BotTheme(user_id_)).INDEX_SCRAPE_MSG).format(
+            u_men = u_men,
+            uid = user_id_,
+            url = url,
+            UPDATES_CHANNEL = UPDATES_CHANNEL
+        ),
+        reply_markup=markup_
+    )
 
 #┣ 📰 𝗨𝘀𝗲𝗿𝗻𝗮𝗺𝗲 : {cname}
 #┣ 📟 𝗣𝗮𝘀𝘀𝘄𝗼𝗿𝗱 : {cpass}

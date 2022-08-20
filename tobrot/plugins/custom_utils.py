@@ -12,6 +12,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from tobrot import LOGGER, DB_URI, PRE_DICT, CAP_DICT, IMDB_TEMPLATE
 from tobrot.database.db_func import DatabaseManager
+from tobrot.bot_theme.themes import BotTheme
 
 async def prefix_set(client, message):
     '''  /setpre command '''
@@ -34,7 +35,13 @@ async def prefix_set(client, message):
         DatabaseManager().user_pre(user_id_, prefix_)
         LOGGER.info(f"[DB] User : {user_id_} Prefix Saved to Database")
 
-    pre_text = await lm.edit_text(f"⚡️<i><b>Custom Prefix Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>Prefix :</b> <code>{txt}</code>", parse_mode=enums.ParseMode.HTML)
+    pre_text = await lm.edit_text(((BotTheme(user_id_)).PREFIX_MSG).format(
+            u_men = u_men,
+            uid = user_id_,
+            t = txt
+        ), 
+        parse_mode=enums.ParseMode.HTML
+    )
     
 
 async def caption_set(client, message):
@@ -63,7 +70,13 @@ async def caption_set(client, message):
         txt = txx[0]
     except:
         pass 
-    cap_text = await lk.edit_text(f"⚡️<i><b>Custom Caption Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>Caption :</b>\n<code>{txt}</code>", parse_mode=enums.ParseMode.HTML)
+    cap_text = await lk.edit_text(((BotTheme(user_id_)).CAPTION_MSG).format(
+            u_men = u_men,
+            uid = user_id_,
+            t = txt
+        ),
+        parse_mode=enums.ParseMode.HTML
+    )
 
 
 async def template_set(client, message):
@@ -86,7 +99,13 @@ async def template_set(client, message):
     if DB_URI:
         DatabaseManager().user_imdb(user_id_, template_)
         LOGGER.info(f"[DB] User : {user_id_} IMDB Template Saved to Database")
-    await lm.edit_text(f"⚡️<i><b>Custom Template Set Successfully</b></i> ⚡️ \n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n🗃 <b>IMDB Template :</b> \n<code>{txt}</code>", parse_mode=enums.ParseMode.HTML)
+    await lm.edit_text(((BotTheme(user_id_)).IMDB_MSG).format(
+            u_men = u_men,
+            uid = user_id_,
+            t = txt
+        ),
+        parse_mode=enums.ParseMode.HTML
+    )
 
 async def theme_set(client, message):
     '''  /choosetheme command '''
@@ -103,4 +122,10 @@ async def theme_set(client, message):
         [InlineKeyboardButton("⛔️ Close ⛔️", callback_data = f"close")],
     ])
 
-    await lk.edit_text(f"⚡️ <i><b>Available Custom Themes</b></i> ⚡️\n\n👤 <b>User :</b> {u_men}\n🆔 <b>User ID :</b> <code>{user_id_}</code>\n\n🗄 <b>Choose Available Theme from Below:</b>", parse_mode=enums.ParseMode.HTML, reply_markup=theme_btn)
+    await lk.edit_text(((BotTheme(user_id_)).THEME_MSG).format(
+            u_men = u_men,
+            uid = user_id_
+        ),
+        parse_mode=enums.ParseMode.HTML, 
+        reply_markup=theme_btn
+    )

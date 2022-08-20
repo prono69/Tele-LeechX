@@ -21,7 +21,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from tobrot import UPDATES_CHANNEL, TGH_AUTHOR, TGH_AUTHOR_URL, LOGGER
 from tobrot.plugins import runcmd 
 from tobrot.helper_funcs.display_progress import humanbytes
-
+from tobrot.bot_theme.themes import BotTheme
 
 def post_to_telegraph_html(a_title: str, content: str) -> str:
     """ Create a Telegram Post using HTML Content """
@@ -60,6 +60,7 @@ async def mediainfo(client, message):
     # Generate MediaInfo of Direct Links or Media Type 
     # ToDo : Add File to Direct Link, Getting MediaInfo without download File
 
+    u_id_ = message.from_user.id
     reply_to = message.reply_to_message
     link_send = message.text.split(" ")
     x_media = None
@@ -124,27 +125,21 @@ async def mediainfo(client, message):
 
     if TG_MEDIA:
         text_ = str(media_type.split(".")[-1])
-        textup = f'''
-ℹ️ <code>MEDIA INFO</code> ℹ
-┃
-┃• <b>File Name :</b> <code>{x_media.file_name}</code>
-┃• <b>Mime Type :</b> <code>{x_media.mime_type}</code>
-┃• <b>File Size :</b> <code>{humanbytes(x_media.file_size)}</code>
-┃• <b>Date :</b> <code>{x_media.date}</code>
-┃• <b>File ID :</b> <code>{x_media.file_id}</code>
-┃• <b>Media Type :</b> <code>{text_}</code>
-┃
-┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹
-'''
+        textup = ((BotTheme(u_id_)).MEDIAINFO_MEDIA_MSG).format(
+            filename = x_media.file_name,
+            mimetype = x_media.mime_type,
+            filesize = humanbytes(x_media.file_size),
+            date = x_media.date,
+            fileid = x_media.file_id,
+            txt = text_,
+            UPDATES_CHANNEL = UPDATES_CHANNEL
+        )
     elif DIRECT_LINK:
-        textup = f"""
-ℹ️ <code>DIRECT LINK INFO</code> ℹ
-┃
-┃• <b>File Name :</b> <code>{title}</code>
-┃• <b>Direct Link :</b> <code>{link}</code>
-┃
-┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹
-"""
+        textup = ((BotTheme(u_id_)).MEDIAINFO_DIRECT_MSG).format(
+            tit = title,
+            link = link,
+            UPDATES_CHANNEL = UPDATES_CHANNEL
+        )
     markup = InlineKeyboardMarkup([[InlineKeyboardButton(text="Mᴇᴅɪᴀ Iɴғᴏ", url=tgh_link)]])
     await process.delete()
     await message.reply_text(text=textup, reply_markup=markup)

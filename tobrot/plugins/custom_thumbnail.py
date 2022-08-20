@@ -15,7 +15,7 @@ from hachoir.parser import createParser
 from PIL import Image
 from tobrot import DOWNLOAD_LOCATION, DB_URI, LOGGER
 from tobrot.database.db_func import DatabaseManager
-
+from tobrot.bot_theme.themes import BotTheme
 
 async def save_thumb_nail(client, message):
     uid = message.from_user.id
@@ -23,7 +23,7 @@ async def save_thumb_nail(client, message):
     thumb_image_path = os.path.join(
         thumbnail_location, str(uid) + ".jpg"
     )
-    ismgs = await message.reply_text("<code>Processing . . . 🔄</code>")
+    ismgs = await message.reply_text((BotTheme(uid)).THUMB_REPLY)
     if message.reply_to_message is not None:
         if not os.path.isdir(thumbnail_location):
             os.makedirs(thumbnail_location)
@@ -43,11 +43,9 @@ async def save_thumb_nail(client, message):
         if DB_URI is not None:
             DatabaseManager().user_save_thumb(uid, thumb_image_path)
             LOGGER.info("[DB] User Thumbnail Saved in Database")
-        await ismgs.edit(
-            "<b>⚡<i>Custom Thumbnail 🖼 Saved for Next Uploads</i>⚡</b>\n\n <b><i>✅Your Photo is Set, Ready to Go ...👨‍🦯</i></b>."
-        )
+        await ismgs.edit((BotTheme(uid)).SAVE_THUMB_MSG)
     else:
-        await ismgs.edit("<b><i>⛔Sorry⛔</i></b>\n\n" + "<b>❌ Reply with Image to Save Your Custom Thumbnail.❌</b>")
+        await ismgs.edit((BotTheme(uid)).SAVE_THUMB_FAIL_MSG)
 
 async def clear_thumb_nail(client, message):
     uid = message.from_user.id
@@ -55,12 +53,12 @@ async def clear_thumb_nail(client, message):
     thumb_image_path = os.path.join(
         thumbnail_location, str(uid) + ".jpg"
     )
-    ismgs = await message.reply_text("<code>Processing . . . 🔄</code>")
+    ismgs = await message.reply_text((BotTheme(uid)).THUMB_REPLY)
     if os.path.exists(thumb_image_path):
         os.remove(thumb_image_path)
         if DB_URI is not None:
             DatabaseManager().user_rm_thumb(uid, thumb_image_path)
             LOGGER.info("[DB] User Thumbnail Removed from Database")
-        await ismgs.edit("<b><i>✅Success✅</i></b>\n\n <b>🖼Custom Thumbnail Cleared Successfully As Per Your Request.</b>")
+        await ismgs.edit((BotTheme(uid)).CLEAR_THUMB_SUCC_MSG)
     else:
-        await ismgs.edit("<b><i>⛔Sorry⛔</i></b>\n\n <b>❌Nothing to Clear For You❌</b>")
+        await ismgs.edit((BotTheme(uid)).CLEAR_THUMB_FAIL_MSG)

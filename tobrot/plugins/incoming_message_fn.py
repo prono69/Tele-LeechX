@@ -7,14 +7,14 @@
 # This is Part of < https://github.com/5MysterySD/Tele-LeechX >
 # All Right Reserved
 
-
 import os
 import time
 from pathlib import Path
 import requests
+from asyncio import sleep as asleep
 from urllib.parse import unquote, quote
-
 from telegram import ParseMode
+
 from tobrot import (
     DOWNLOAD_LOCATION,
     CLONE_COMMAND_G,
@@ -32,8 +32,8 @@ from tobrot import (
     FSUB_CHANNEL,
     USER_DTS
 )
-from tobrot import bot
-from tobrot.helper_funcs.display_progress import humanbytes
+from tobrot import bot, EDIT_SLEEP_TIME_OUT
+from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.helper_funcs.bot_commands import BotCommands
 from tobrot.helper_funcs.admin_check import AdminCheck
 from tobrot.helper_funcs.cloneHelper import CloneHelper
@@ -47,19 +47,20 @@ from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.helper_funcs.youtube_dl_extractor import extract_youtube_dl_formats
 from tobrot.helper_funcs.ytplaylist import yt_playlist_downg
 from tobrot.plugins.force_sub_handler import handle_force_sub
+from tobrot.bot_theme.themes import BotTheme
 from pyrogram import enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 async def incoming_purge_message_f(client, message):
-    """/purge command"""
-    i_m_sefg2 = await message.reply_text("Purging...", quote=True)
+    msg = await message.reply_text("Purging...", quote=True)
     if await AdminCheck(client, message.chat.id, message.from_user.id):
         aria_i_p = await aria_start()
-        # Show All Downloads
         downloads = aria_i_p.get_downloads()
         for download in downloads:
             LOGGER.info(download.remove(force=True))
-    await i_m_sefg2.delete()
+        await msg.edit_text('Purged Successfully !!')
+    await asleep(EDIT_SLEEP_TIME_OUT)
+    await msg.delete()
 
 def magnet_parse(mag_link):
     link = unquote(mag_link)
@@ -166,7 +167,7 @@ async def incoming_message_f(client, message):
 
     endText = f"\n📬 <b>Source :</b> <a href='{message.link}'>Click Here</a>\n\n#LeechStart #FXLogs"
     if not txtCancel:
-        if LEECH_LOG:
+        if LEECH_LOG and USER_DTS:
             text__ += endText
             logs_msg = bot.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
         LOGGER.info(f"Leech Started : {message.from_user.first_name}")
@@ -187,8 +188,9 @@ async def incoming_message_f(client, message):
             LOGGER.info(cf_name)
         else:
             if user_command == BotCommands.LeechCommand.lower():
-                u_men = message.from_user.mention
-                await i_m_sefg.edit(f"<i> Hey {u_men}, \n\n ⚠️ Check and Send a Valid Download Source to Start Me Up !! ⚠️</i>")
+                await i_m_sefg.edit(((BotTheme(g_id)).WRONG_COMMAND).format(
+                    u_men = message.from_user.mention
+                ))
                 return
             is_file = True
             dl_url = rep_mess
@@ -200,7 +202,7 @@ async def incoming_message_f(client, message):
         dl_url, cf_name = message.command[1], message.command[3]
 
     else:
-        await i_m_sefg.edit("<b>⚠️ Opps ⚠️</b>\n\n <b><i>⊠ Reply with Direct/Torrent Link or File⁉️</i></b>")
+        await i_m_sefg.edit((BotTheme(g_id)).WRONG_DEF_COMMAND)
         return
     if dl_url is not None:
         current_user_id = message.from_user.id
@@ -213,11 +215,13 @@ async def incoming_message_f(client, message):
         if not is_file:
             await i_m_sefg.edit_text("<code>Extracting Links . . . 🔀</code>")
             aria_i_p = await aria_start()
-        
-        u_men = message.from_user.mention
-        u_id = message.from_user.id 
-        await i_m_sefg.edit_text(f"┏━━━━━━━━━━━━━━━━╻\n┣👤 𝐔𝐬𝐞𝐫 : {u_men}({u_id}) \n┃\n┃ <code>⚡️ Your Request Has Been Added To The Status List ⚡️</code> \n┃\n┣ <b><u>Send</u> /{STATUS_COMMAND} <u>To Check Your Progress</u></b>\n┃\n┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️━╹")
 
+        await i_m_sefg.edit_text(((BotTheme(g_id)).DOWNLOAD_ADDED_MSG).format(
+            u_men = u_men,
+            u_id = g_id,
+            status_cmd = BotCommands.StatusCommand,
+            UPDATES_CHANNEL = UPDATES_CHANNEL
+        ))
         is_zip = False
         is_cloud = False
         is_unzip = False
@@ -257,21 +261,17 @@ async def incoming_message_f(client, message):
         if not sagtus:
             await i_m_sefg.edit_text(err_message)
     else:
-        await i_m_sefg.edit_text(
-            f"<b> 🏖Maybe You Didn't Know I am Being Used !!</b> \n\n<b>🌐 API Error</b>: {cf_name}"
-        )
-
+        await i_m_sefg.edit_text(((BotTheme(g_id)).EXCEP_DEF_MSG).format(
+            cf_name = cf_name
+        ))
 
 async def incoming_youtube_dl_f(client, message):
-    """ /ytdl command """
     current_user_id = message.from_user.id
     u_men = message.from_user.mention
     credit = await message.reply_text(
         f"<b><i>🛃 Working For 🛃:</i></b> {u_men}", parse_mode=enums.ParseMode.HTML
     )
     i_m_sefg = await message.reply_text("<code>Prrocessing...🔃</code>", quote=True)
-    # LOGGER.info(message)
-    # extract link from message
     if message.reply_to_message:
         dl_url, cf_name, yt_dl_user_name, yt_dl_pass_word = await extract_link(
             message.reply_to_message, "YTDL"
@@ -290,12 +290,9 @@ async def incoming_youtube_dl_f(client, message):
         return
     if dl_url is not None:
         await i_m_sefg.edit_text("<code>Extracting Links . . . 🔀</code>")
-        # create an unique directory
         user_working_dir = os.path.join(DOWNLOAD_LOCATION, str(current_user_id))
-        # create download directory, if not exist
         if not os.path.isdir(user_working_dir):
             os.makedirs(user_working_dir)
-        # list the formats, and display in button markup formats
         thumb_image, text_message, reply_markup = await extract_youtube_dl_formats(
             dl_url, cf_name, yt_dl_user_name, yt_dl_pass_word, user_working_dir
         )
@@ -305,7 +302,6 @@ async def incoming_youtube_dl_f(client, message):
             with open(thumb_img, "wb") as thumb:
                 thumb.write(req.content)
             await message.reply_photo(
-                # text_message,
                 photo=thumb_img,
                 quote=True,
                 caption=text_message,
@@ -319,10 +315,7 @@ async def incoming_youtube_dl_f(client, message):
             "<b> 🏖Maybe You Didn't Know I am Being Used !!</b> \n\n<b>🌐 API Error</b>: {cf_name}"
         )
 
-
-# playlist
 async def g_yt_playlist(client, message):
-    """ /pytdl command """
     user_command = message.command[0]
     usr_id = message.from_user.id
     is_cloud = False
@@ -341,7 +334,7 @@ async def g_yt_playlist(client, message):
     if "youtube.com/playlist" in url:
         u_men = message.from_user.mention
         i_m_sefg = await message.reply_text(
-            f"<b>Ok Fine 🐈 {u_men} Bro!!:\n Your Request has been ADDED</b>\n\n <code> Please wait until Upload</code>",
+            f"<b>Ok Fine {u_men} Bro!!:\n Your Request has been ADDED</b>\n\n <code> Please wait until Upload</code>",
             parse_mode=enums.ParseMode.HTML
         )
         await yt_playlist_downg(message, i_m_sefg, client, is_cloud)
@@ -349,11 +342,7 @@ async def g_yt_playlist(client, message):
     else:
         await message.reply_text("<b>YouTube playlist link only 🙄</b>", quote=True)
 
- #
-
-
 async def g_clonee(client, message):
-    """ /gclone command """
     g_id = message.from_user.id
     _link = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
@@ -365,23 +354,27 @@ async def g_clonee(client, message):
         linky = None
 
     if linky is not None:
-        gclone = CloneHelper(message)
-        gclone.config()
-        a, h = await gclone.get_id()
-        LOGGER.info(a)
-        LOGGER.info(h)
-        await gclone.gcl()
-        await gclone.link_gen_size()
+        try:
+            gclone = CloneHelper(message)
+            gclone.config()
+            a, h = await gclone.get_id()
+            LOGGER.info(a)
+            LOGGER.info(h)
+            await gclone.gcl()
+            await gclone.link_gen_size()
+        except Exception as e:
+            LOGGER.info(f'GClone Error : {e}')
+            await message.reply_text(e)
     else:
         await message.reply_text(
-            f"""**Send GDrive Link Along with Command :**
+            f'''**Send GDrive Link Along with Command :**
 /{CLONE_COMMAND_G}(BotName) `Link`
 
 **Reply to a GDrive Link :**
 /{CLONE_COMMAND_G}(BotName) to Link
 
 **SUPPORTED SITES :**
-__Google Drive, GDToT, AppDrive, Kolop, HubDrive, DriveLinks__"""
+__Google Drive, GDToT, AppDrive, Kolop, HubDrive, DriveLinks__'''
         )
 
 
@@ -390,6 +383,26 @@ async def rename_tg_file(client, message):
     if not message.reply_to_message:
         await message.reply("<b>⚠️ Opps ⚠️</b>\n\n <b><i>⊠ Reply with Telegram Media (File / Video)⁉️</b>", quote=True)
         return
+    text__ = f"<i>⚡️Rename Initiated⚡️</i>\n\n👤 <b>User</b> : <a href='tg://user?id={usr_id}'>{message.from_user.first_name}</a>\n🆔 <b>User ID</b> : #ID{usr_id}\n"
+    reply_to = message.reply_to_message
+    if reply_to.document:
+        filename = [reply_to.document][0].file_name
+        filesize = humanbytes([reply_to.document][0].file_size)
+        if str(filename).lower().endswith(".torrent"):
+            text__ += f"📂 <b>Media Type</b> : ☢️ <code>Torrent File</code> ☢️\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
+        else:
+            text__ += f"📂 <b>Media Type</b> : 🗃 <code>Document</code> 🗃\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
+    elif reply_to.video:
+        filename = [reply_to.video][0].file_name
+        filesize = humanbytes([reply_to.video][0].file_size)
+        text__ += f"📂 <b>Media Type</b> :  🎥 <code>Video</code> 🎥\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
+    elif reply_to.audio:
+        filename = [reply_to.audio][0].file_name
+        filesize = humanbytes([reply_to.audio][0].file_size)
+        text__ += f"📂 <b>Media Type</b> :  🎶 <code>Audio</code> 🎶\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
+
+    await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
+
     if len(message.command) > 1:
         new_name = (
             str(Path().resolve()) + "/" +
@@ -402,43 +415,44 @@ async def rename_tg_file(client, message):
             else:
                 return
         except Exception as g_g:
-            LOGGER.error(g_g)
-            await message.reply_text("g_g")
+            LOGGER.error(f'Rename Error :{g_g}')
         response = {}
+        start_upload = time.time()
         final_response = await upload_to_tg(
             mess_age, new_name, usr_id, response, client
         )
-        LOGGER.info(final_response)
+        end_upload = time.time()
         if not final_response:
             return
         try:
+            timeuti = TimeFormatter((end_upload - start_upload) * 1000)
+            mention_req_user = ((BotTheme(usr_id)).TOP_LIST_FILES_MSG).format(
+                user_id = usr_id,
+                u_men = message.from_user.mention,
+                timeuti = timeuti
+            )
+            message_credits = ((BotTheme(usr_id)).BOTTOM_LIST_FILES_MSG).format(
+                UPDATES_CHANNEL = UPDATES_CHANNEL
+            )
             message_to_send = ""
             for key_f_res_se in final_response:
                 local_file_name = key_f_res_se
                 message_id = final_response[key_f_res_se]
                 channel_id = str(message.chat.id)[4:]
                 private_link = f"https://t.me/c/{channel_id}/{message_id}"
-                message_to_send += "⇒ <a href='"
-                message_to_send += private_link
-                message_to_send += "'>"
-                message_to_send += local_file_name
-                message_to_send += "</a>"
-                message_to_send += "\n"
-            if message_to_send != "":
-                mention_req_user = (
-                    f"<a href='tg://user?id={usr_id}'><i>🗃 Your Uploaded Files !!</i></a>\n\n"
+                message_to_send += ((BotTheme(usr_id)).SINGLE_LIST_FILES_MSG).format(
+                    private_link = private_link,
+                    local_file_name = local_file_name
                 )
-                message_to_send = mention_req_user + message_to_send
-                message_to_send = message_to_send + "\n\n" + "#Uploads\n\n<b>💥 <i>Powered By : @FuZionX</i> </b>"
-            else:
-                message_to_send = "<i>FAILED</i> to upload files. 😞😞"
+            if message_to_send == "":
+                message_to_send = "<i>FAILED</i> \n\nCheck Logs and Try Again Later !!. "
             await message.reply_text(
-                text=message_to_send, quote=True, disable_web_page_preview=True
+                text=mention_req_user + message_to_send + message_credits, quote=True, disable_web_page_preview=True
             )
         except Exception as pe:
             LOGGER.info(pe)
 
     else:
-        await message.reply_text(
-            "<b>⚠️ Oops ⚠️</b>\n\n⚡Provide Name with extension.\n\n➩<b>Example</b>: <code> /rename Sample.mkv</code>", quote=True
+        await message.reply_text(text=(BotTheme(usr_id)).WRONG_RENAME_MSG,
+           quote=True
         )
