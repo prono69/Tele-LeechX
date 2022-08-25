@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) Shrimadhav U K | gautamajay52 |5MysterySD | Other Contributors 
+# (c) Shrimadhav U K | gautamajay52 | 5MysterySD | Other Contributors 
 #
 # Copyright 2022 - TeamTele-LeechX
 # 
@@ -27,7 +27,7 @@ async def down_load_media_f(client, message):
     await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
     if message.reply_to_message is not None:
         the_real_download_location, mess_age = await download_tg(client, message)
-        the_real_download_location_g = the_real_download_location
+        __inputPathName = the_real_download_location
         if user_command == TELEGRAM_LEECH_UNZIP_COMMAND.lower():
             try:
                 check_ifi_file = get_base_name(the_real_download_location)
@@ -41,18 +41,18 @@ async def down_load_media_f(client, message):
                 )
         else:
             try:
-                new_name = (
+                __inputPathName = (
                     str(Path().resolve()) + "/" +
                     message.text.split(" ", maxsplit=1)[1].strip()
                 )
                 if the_real_download_location:
-                    orename(the_real_download_location, new_name) 
+                    orename(the_real_download_location, __inputPathName) 
                 else: return
             except IndexError: pass
             except Exception as err:
                 LOGGER.error(f'TLeech Error :{err}')
                 pass
-        await upload_to_gdrive(the_real_download_location_g, mess_age, message, user_id)
+        await upload_to_gdrive(__inputPathName, mess_age, message, user_id)
     else:
         await message.reply_text("<b>⚠️ Opps ⚠️</b>\n\n <b><i>⊠ Reply to a Telegram Media to Upload to the Cloud Drive via RClone Engine .⁉️</i></b>")
 
