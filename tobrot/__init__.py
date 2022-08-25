@@ -82,7 +82,7 @@ CAP_DICT = {}
 IMDB_TEMPLATE = {}
 USER_THEMES = {}
 AVAILABLE_THEMES = {}
-__version__ = "2.7.8"
+__version__ = "2.7.9"
 
 # The Telegram API things >>>>>>>>>>>
 TG_BOT_TOKEN = getVar("TG_BOT_TOKEN", "")
@@ -229,7 +229,6 @@ LEECH_LOG = getVar("LEECH_LOG", "")
 EX_LEECH_LOG = getVar("EX_LEECH_LOG", "")
 EXCEP_CHATS = getVar("EXCEP_CHATS", "")
 BOT_PM = getVar("BOT_PM", False)
-SERVER_HOST = getVar("SERVER_HOST", "Heroku")
 
 # 4 GB Upload Utils >>>>>>>>>>>
 PRM_USERS = getVar("PRM_USERS", "") #Optional 
