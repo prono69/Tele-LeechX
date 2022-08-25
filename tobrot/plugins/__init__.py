@@ -3,7 +3,7 @@ from shlex import split as ssplit
 from shutil import rmtree
 from re import match as rmatch
 
-from tobrot import DOWNLOAD_LOCATION
+from tobrot import DOWNLOAD_LOCATION, LOGGER
 from tobrot.helper_funcs.display_progress import humanbytes
 from typing import Tuple
 
