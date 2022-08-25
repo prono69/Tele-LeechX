@@ -7,49 +7,32 @@
 # This is Part of < https://github.com/5MysterySD/Tele-LeechX >
 # All Right Reserved
 
-import os
-import time
+from os import path as opath, makedirs, rename as orename
+from time import time
 from pathlib import Path
-import requests
+from requests import get as rget
 from asyncio import sleep as asleep
 from urllib.parse import unquote, quote
-from telegram import ParseMode
 
-from tobrot import (
-    DOWNLOAD_LOCATION,
-    CLONE_COMMAND_G,
-    GLEECH_COMMAND,
-    GLEECH_UNZIP_COMMAND,
-    GLEECH_ZIP_COMMAND,
-    LOGGER,
-    GPYTDL_COMMAND,
-    STATUS_COMMAND,
-    UPDATES_CHANNEL,
-    LEECH_LOG,
-    BOT_PM,
-    EXCEP_CHATS,
-    bot, 
-    FSUB_CHANNEL,
-    USER_DTS
-)
+from telegram import ParseMode
+from pyrogram import enums
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from tobrot import DOWNLOAD_LOCATION, CLONE_COMMAND_G, GLEECH_COMMAND, GLEECH_UNZIP_COMMAND, GLEECH_ZIP_COMMAND, LOGGER, GPYTDL_COMMAND, STATUS_COMMAND, UPDATES_CHANNEL, LEECH_LOG, BOT_PM, EXCEP_CHATS, bot, FSUB_CHANNEL, USER_DTS
 from tobrot import bot, EDIT_SLEEP_TIME_OUT
 from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.helper_funcs.bot_commands import BotCommands
 from tobrot.helper_funcs.admin_check import AdminCheck
 from tobrot.helper_funcs.cloneHelper import CloneHelper
 from tobrot.helper_funcs.download import download_tg
-from tobrot.helper_funcs.download_aria_p_n import (
-    aria_start,
-    call_apropriate_function,
-)
+from tobrot.helper_funcs.download_aria_p_n import aria_start, call_apropriate_function
 from tobrot.helper_funcs.extract_link_from_message import extract_link
 from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.helper_funcs.youtube_dl_extractor import extract_youtube_dl_formats
 from tobrot.helper_funcs.ytplaylist import yt_playlist_downg
+from tobrot.plugins import getDetails
 from tobrot.plugins.force_sub_handler import handle_force_sub
 from tobrot.bot_theme.themes import BotTheme
-from pyrogram import enums
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 async def incoming_purge_message_f(client, message):
     msg = await message.reply_text("Purging...", quote=True)
@@ -81,11 +64,8 @@ async def incoming_message_f(client, message):
     """/leech command or /gleech command"""
     user_command = message.command[0]
     g_id = message.from_user.id
-    u_men = message.from_user.mention
-    link_send = message.text.split(" ", maxsplit=1)
-    reply_to = message.reply_to_message
     txtCancel = False
-    
+
     if FSUB_CHANNEL:
         LOGGER.info("[ForceSubscribe] Initiated")
         backCode = await handle_force_sub(client, message)
@@ -110,61 +90,11 @@ async def incoming_message_f(client, message):
             message = await message.reply_text(text=startwarn, parse_mode=enums.ParseMode.HTML, quote=True, reply_markup=button_markup)
             return
 
-    text__ = f"<i>⚡️Leech Initiated⚡️</i>\n\n👤 <b>User</b> : <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name}</a>\n🆔 <b>User ID</b> : #ID{g_id}\n"
-    if len(link_send) > 1:
-        link = link_send[1]
-        if link.lower().startswith("magnet:"):
-            text__ += f"🧲 <b>Magnet Link Details</b> :  \n{magnet_parse(link)}"
-        elif link.lower().startswith("http") and "|" not in link:
-            text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>"
-        elif link.lower().startswith("http") and "|" in link:
-            splitData = link.split("|", 1)
-            link = splitData[0]
-            text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>\n🗳 <b>Custom Name</b> :<code>{splitData[1]}</code>"
-        else:
-            text__ += f"🔗 <b>Link</b> :  <code>{link}</code>"
-    elif reply_to is not None:
-        if reply_to.media:
-            if reply_to.document:
-                filename = [reply_to.document][0].file_name
-                filesize = humanbytes([reply_to.document][0].file_size)
-                if str(filename).lower().endswith(".torrent"):
-                    text__ += f"📂 <b>Media Type</b> : ☢️ <code>Torrent File</code> ☢️\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-                else:
-                    text__ += f"📂 <b>Media Type</b> : 🗃 <code>Document</code> 🗃\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-            elif reply_to.video:
-                filename = [reply_to.video][0].file_name
-                filesize = humanbytes([reply_to.video][0].file_size)
-                text__ += f"📂 <b>Media Type</b> :  🎥 <code>Video</code> 🎥\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-            elif reply_to.audio:
-                filename = [reply_to.audio][0].file_name
-                filesize = humanbytes([reply_to.audio][0].file_size)
-                text__ += f"📂 <b>Media Type</b> :  🎶 <code>Audio</code> 🎶\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-            else:
-                text__ += ""
-        elif reply_to.text.lower().startswith("magnet:"):
-            text__ += f"🧲 <b>Magnet Link Details</b> :  \n{magnet_parse(reply_to.text)}"
-        else:
-            link = reply_to.text
-            cusfname = ""
-            cusfnam = link.split("|", maxsplit=1)
-            if len(cusfnam) > 1:
-                link, cusfname = cusfnam[0], cusfnam[1]
-            LOGGER.info(cusfname)
-            if cusfname != "" and link.lower().startswith("http"):
-                text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>\n🗳 <b>Custom Name</b> :<code>{cusfname}</code>"
-            elif link.lower().startswith("http"):
-                text__ += f"🔗 <b>Link</b> :  <a href='{link.strip()}'>Click Here</a>"
-            else:
-                text__ += f"🔗 <b>Link</b> :  <code>{link}</code>"
-    else:
-        txtCancel = True
-        link = "N/A"
-        text__ += f"🔗 <b>Link</b> : <code>{link}</code>"
-        
+    text__, txtCancel = getDetails(client, message, 'Leech')
+
     if USER_DTS:
         link_text = await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
-
+    
     endText = f"\n📬 <b>Source :</b> <a href='{message.link}'>Click Here</a>\n\n#LeechStart #FXLogs"
     if not txtCancel:
         if LEECH_LOG and USER_DTS:
@@ -206,19 +136,19 @@ async def incoming_message_f(client, message):
         return
     if dl_url is not None:
         current_user_id = message.from_user.id
-        new_download_location = os.path.join(
-            DOWNLOAD_LOCATION, str(current_user_id), str(time.time())
+        new_download_location = opath.join(
+            DOWNLOAD_LOCATION, str(current_user_id), str(time())
         )
-        if not os.path.isdir(new_download_location):
-            os.makedirs(new_download_location)
+        if not opath.isdir(new_download_location):
+            makedirs(new_download_location)
         aria_i_p = ''
         if not is_file:
             await i_m_sefg.edit_text("<code>Extracting Links . . . 🔀</code>")
             aria_i_p = await aria_start()
 
         await i_m_sefg.edit_text(((BotTheme(g_id)).DOWNLOAD_ADDED_MSG).format(
-            u_men = u_men,
-            u_id = g_id,
+            u_men = message.from_user.mention,
+            u_id = message.from_user.id,
             status_cmd = BotCommands.StatusCommand,
             UPDATES_CHANNEL = UPDATES_CHANNEL
         ))
@@ -290,14 +220,14 @@ async def incoming_youtube_dl_f(client, message):
         return
     if dl_url is not None:
         await i_m_sefg.edit_text("<code>Extracting Links . . . 🔀</code>")
-        user_working_dir = os.path.join(DOWNLOAD_LOCATION, str(current_user_id))
-        if not os.path.isdir(user_working_dir):
-            os.makedirs(user_working_dir)
+        user_working_dir = opath.join(DOWNLOAD_LOCATION, str(current_user_id))
+        if not opath.isdir(user_working_dir):
+            makedirs(user_working_dir)
         thumb_image, text_message, reply_markup = await extract_youtube_dl_formats(
             dl_url, cf_name, yt_dl_user_name, yt_dl_pass_word, user_working_dir
         )
         if thumb_image is not None:
-            req = requests.get(f"{thumb_image}")
+            req = rget(f"{thumb_image}")
             thumb_img = f"{current_user_id}.jpg"
             with open(thumb_img, "wb") as thumb:
                 thumb.write(req.content)
@@ -380,28 +310,11 @@ __Google Drive, GDToT, AppDrive, Kolop, HubDrive, DriveLinks__'''
 
 async def rename_tg_file(client, message):
     usr_id = message.from_user.id
+    text__, _ = getDetails(client, message, 'Rename')
+    await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
     if not message.reply_to_message:
         await message.reply("<b>⚠️ Opps ⚠️</b>\n\n <b><i>⊠ Reply with Telegram Media (File / Video)⁉️</b>", quote=True)
         return
-    text__ = f"<i>⚡️Rename Initiated⚡️</i>\n\n👤 <b>User</b> : <a href='tg://user?id={usr_id}'>{message.from_user.first_name}</a>\n🆔 <b>User ID</b> : #ID{usr_id}\n"
-    reply_to = message.reply_to_message
-    if reply_to.document:
-        filename = [reply_to.document][0].file_name
-        filesize = humanbytes([reply_to.document][0].file_size)
-        if str(filename).lower().endswith(".torrent"):
-            text__ += f"📂 <b>Media Type</b> : ☢️ <code>Torrent File</code> ☢️\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-        else:
-            text__ += f"📂 <b>Media Type</b> : 🗃 <code>Document</code> 🗃\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-    elif reply_to.video:
-        filename = [reply_to.video][0].file_name
-        filesize = humanbytes([reply_to.video][0].file_size)
-        text__ += f"📂 <b>Media Type</b> :  🎥 <code>Video</code> 🎥\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-    elif reply_to.audio:
-        filename = [reply_to.audio][0].file_name
-        filesize = humanbytes([reply_to.audio][0].file_size)
-        text__ += f"📂 <b>Media Type</b> :  🎶 <code>Audio</code> 🎶\n📨 <b>File Name:</b> <code>{filename}</code>\n🗃 <b>Total Size:</b> <code>{filesize}</code>"
-
-    await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
 
     if len(message.command) > 1:
         new_name = (
@@ -411,17 +324,17 @@ async def rename_tg_file(client, message):
         file, mess_age = await download_tg(client, message)
         try:
             if file:
-                os.rename(file, new_name)
+                orename(file, new_name)
             else:
                 return
         except Exception as g_g:
             LOGGER.error(f'Rename Error :{g_g}')
         response = {}
-        start_upload = time.time()
+        start_upload = time()
         final_response = await upload_to_tg(
             mess_age, new_name, usr_id, response, client
         )
-        end_upload = time.time()
+        end_upload = time()
         if not final_response:
             return
         try:

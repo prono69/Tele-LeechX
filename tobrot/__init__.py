@@ -27,7 +27,6 @@ from telegram.ext import Updater
 run(["wget", "-O", "/app/tobrot/aria2/dht.dat", "https://github.com/P3TERX/aria2.conf/raw/master/dht.dat"])
 run(["wget", "-O", "/app/tobrot/aria2/dht6.dat", "https://github.com/P3TERX/aria2.conf/raw/master/dht6.dat"])
 
-# Temporary Fix for Extract Issue >>>>>>>
 run(["chmod", "+x", "extract"])
 
 def getVar(var: str, val):
@@ -170,12 +169,12 @@ TELEGRAM_LEECH_UNZIP_COMMAND = getVar("TELEGRAM_LEECH_UNZIP_COMMAND", "tleechunz
 STATUS_COMMAND = getVar("STATUS_COMMAND", "status")
 SAVE_THUMBNAIL = getVar("SAVE_THUMBNAIL", "savethumb")
 CLEAR_THUMBNAIL = getVar("CLEAR_THUMBNAIL", "clearthumb")
-UPLOAD_AS_DOC = bool(getVar("UPLOAD_AS_DOC", False))
+UPLOAD_AS_DOC = getVar("UPLOAD_AS_DOC", "False")
 LOG_COMMAND = getVar("LOG_COMMAND", "log")
 STATS_COMMAND = getVar("STATS_COMMAND", "stats")
 
 #Bot Command [Custom Bot Cmd Name]  >>>>>>>>>>>
-SET_BOT_COMMANDS = getVar("SET_BOT_COMMANDS", True)
+SET_BOT_COMMANDS = getVar("SET_BOT_COMMANDS", "True")
 UPLOAD_COMMAND = getVar("UPLOAD_COMMAND", "upload")
 RENEWME_COMMAND = getVar("RENEWME_COMMAND", "renewme")
 RENAME_COMMAND = getVar("RENAME_COMMAND", "rename")

@@ -8,20 +8,23 @@
 # All Right Reserved
 
 from asyncio import sleep as asleep
-from os import path as opath, makedirs as omakedirs
+from os import path as opath, makedirs as omakedirs, rename as orename
 from time import time
 from pathlib import Path
+from pyrogram import enums
 
 from tobrot import DOWNLOAD_LOCATION, LOGGER, TELEGRAM_LEECH_UNZIP_COMMAND
 from tobrot.helper_funcs.create_compressed_archive import unzip_me, get_base_name
 from tobrot.helper_funcs.display_progress import Progress, TimeFormatter, humanbytes
 from tobrot.helper_funcs.upload_to_tg import upload_to_gdrive
+from tobrot.plugins import getDetails
 from tobrot.bot_theme.themes import BotTheme
 
-async def down_load_media_f(client, message):  # to be removed
+async def down_load_media_f(client, message):
     user_command = message.command[0]
     user_id = message.from_user.id
-
+    text__, _ = getDetails(client, message, 'Cloud Rename')
+    await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
     if message.reply_to_message is not None:
         the_real_download_location, mess_age = await download_tg(client, message)
         the_real_download_location_g = the_real_download_location
@@ -34,13 +37,24 @@ async def down_load_media_f(client, message):  # to be removed
             except Exception as ge:
                 LOGGER.info(ge)
                 LOGGER.info(
-                    f"Can't extract {opath.basename(the_real_download_location)}, Uploading the same file"
+                    f"Not Extract : {opath.basename(the_real_download_location)}, Uploading Same file"
                 )
+        else:
+            try:
+                new_name = (
+                    str(Path().resolve()) + "/" +
+                    message.text.split(" ", maxsplit=1)[1].strip()
+                )
+                if the_real_download_location:
+                    orename(the_real_download_location, new_name) 
+                else: return
+            except IndexError: pass
+            except Exception as err:
+                LOGGER.error(f'TLeech Error :{err}')
+                pass
         await upload_to_gdrive(the_real_download_location_g, mess_age, message, user_id)
     else:
-        await mess_age.edit_text(
-            "Reply to a Telegram Media, to upload to the Cloud Drive."
-        )
+        await message.reply_text("<b>⚠️ Opps ⚠️</b>\n\n <b><i>⊠ Reply to a Telegram Media to Upload to the Cloud Drive via RClone Engine .⁉️</i></b>")
 
 async def download_tg(client, message):
 

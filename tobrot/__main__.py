@@ -41,7 +41,6 @@ from tobrot import (
     GPYTDL_COMMAND,
     RCLONE_COMMAND,
     UPDATES_CHANNEL,
-    SERVER_HOST,
     LEECH_LOG,
     STRING_SESSION,
     SET_BOT_COMMANDS,
@@ -83,8 +82,7 @@ from tobrot.plugins.status_message_fn import (
     upload_as_video
 )
 
-if SET_BOT_COMMANDS:
-    botcmds = [
+botcmds = [
         (f'{BotCommands.LeechCommand}', '📨 [Reply] Leech any Torrent/ Magnet/ Direct Link '),
         (f'{BotCommands.ExtractCommand}', '🔐 Unarchive items . .'),
         (f'{BotCommands.ArchiveCommand}', '🗜 Archive as .tar.gz acrhive... '),
@@ -216,7 +214,7 @@ if __name__ == "__main__":
         os.remove(".restartmsg")
     elif OWNER_ID:
         try:
-            text = f"<b>Bᴏᴛ Rᴇsᴛᴀʀᴛᴇᴅ !!</b>\n\n<b>📊 𝙃𝙤𝙨𝙩 :</b> <code>{SERVER_HOST}</code>\n{ist}\n\n<b>ℹ️ 𝙑𝙚𝙧𝙨𝙞𝙤𝙣 :</b> <code>{__version__}</code>"
+            text = f"<b>Bᴏᴛ Rᴇsᴛᴀʀᴛᴇᴅ !!</b>\n\n{ist}\n\n<b>ℹ️ 𝙑𝙚𝙧𝙨𝙞𝙤𝙣 :</b> <code>{__version__}</code>"
             if RDM_QUOTE:
                 try:
                     qResponse = requests.get("https://quote-garden.herokuapp.com/api/v3/quotes/random")
@@ -233,7 +231,7 @@ if __name__ == "__main__":
                     bot.sendMessage(chat_id=i, text=text, parse_mode=ParseMode.HTML)
         except Exception as e:
             LOGGER.warning(e)
-    if SET_BOT_COMMANDS:
+    if SET_BOT_COMMANDS.lower() == "true":
         bot.set_my_commands(botcmds)
 
     # Start The Bot >>>>>>>
@@ -242,16 +240,14 @@ if __name__ == "__main__":
     ##############################################################################
     incoming_message_handler = MessageHandler(
         incoming_message_f,
-        filters=filters.command(
-            [
+        filters=filters.command([
                 BotCommands.LeechCommand, f"{BotCommands.LeechCommand}@{bot.username}",
                 BotCommands.ArchiveCommand, f"{BotCommands.ArchiveCommand}@{bot.username}",
                 BotCommands.ExtractCommand, f"{BotCommands.ExtractCommand}@{bot.username}",
-                GLEECH_COMMAND,
-                GLEECH_UNZIP_COMMAND,
-                GLEECH_ZIP_COMMAND,
-            ]
-        )
+                GLEECH_COMMAND, f"{GLEECH_COMMAND}@{bot.username}",
+                GLEECH_UNZIP_COMMAND, f"{GLEECH_UNZIP_COMMAND}@{bot.username}",
+                GLEECH_ZIP_COMMAND, f"{GLEECH_ZIP_COMMAND}@{bot.username}",
+            ])
         & filters.chat(chats=AUTH_CHANNEL),
     )
     app.add_handler(incoming_message_handler)
@@ -262,7 +258,7 @@ if __name__ == "__main__":
     ##############################################################################
     incoming_telegram_download_handler = MessageHandler(
         down_load_media_f,
-        filters=filters.command([TELEGRAM_LEECH_COMMAND, TELEGRAM_LEECH_UNZIP_COMMAND])
+        filters=filters.command([TELEGRAM_LEECH_COMMAND, f"{TELEGRAM_LEECH_COMMAND}@{bot.username}", TELEGRAM_LEECH_UNZIP_COMMAND, f"{TELEGRAM_LEECH_UNZIP_COMMAND}@{bot.username}"])
         & filters.chat(chats=AUTH_CHANNEL),
     )
     app.add_handler(incoming_telegram_download_handler)
