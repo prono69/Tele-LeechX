@@ -42,6 +42,21 @@ def is_appdrive_link(url: str):
     url = rmatch(r'https?://appdrive\.\S+', url) 
     return bool(url)
 
+def magnet_parse(mag_link):
+    link = unquote(mag_link)
+    link = link.split("&")
+    tracker = ""
+    tracCount = 0
+    for check in link:
+        if check.startswith('dn='):
+            name = check.replace("dn=", "")
+        elif check.startswith('tr='):
+            tracCount += 1
+            tracker += f"{tracCount}. <code>{check.replace('tr=', '')}</code>\n"
+        elif check.startswith('magnet:?xt=urn:btih:'):
+            hashh = check.replace('magnet:?xt=urn:btih:', '')
+    return f"🔸️ <b>Hash :</b> <i>{hashh}</i>\n📨 <b>Name :</b> {name}\n🖲 <b>Trackers ({tracCount}) :</b> \n{tracker} \n 🔗 <a href='https://t.me/share/url?url={quote(mag_link)}'>Share To Telegram</a>"
+
 def getDetails(client, message, func_txt: str):
     g_id = message.from_user.id
     u_men = message.from_user.mention
