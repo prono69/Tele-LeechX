@@ -2,6 +2,7 @@ from asyncio import create_subprocess_exec, subprocess
 from shlex import split as ssplit
 from shutil import rmtree
 from re import match as rmatch
+from urllib.parse import unquote
 
 from tobrot import DOWNLOAD_LOCATION, LOGGER
 from tobrot.helper_funcs.display_progress import humanbytes
