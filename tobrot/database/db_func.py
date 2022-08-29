@@ -32,7 +32,7 @@ class DatabaseManager:
                  vid boolean DEFAULT FALSE,
                  doc boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
-                 pre text DEFAULT '',
+                 pre text ARRAY,
                  cap text DEFAULT '',
                  imdb text DEFAULT ''
               )

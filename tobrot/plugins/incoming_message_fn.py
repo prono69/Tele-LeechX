@@ -45,21 +45,6 @@ async def incoming_purge_message_f(client, message):
     await asleep(EDIT_SLEEP_TIME_OUT)
     await msg.delete()
 
-def magnet_parse(mag_link):
-    link = unquote(mag_link)
-    link = link.split("&")
-    tracker = ""
-    tracCount = 0
-    for check in link:
-        if check.startswith('dn='):
-            name = check.replace("dn=", "")
-        elif check.startswith('tr='):
-            tracCount += 1
-            tracker += f"{tracCount}. <code>{check.replace('tr=', '')}</code>\n"
-        elif check.startswith('magnet:?xt=urn:btih:'):
-            hashh = check.replace('magnet:?xt=urn:btih:', '')
-    return f"🔸️ <b>Hash :</b> <i>{hashh}</i>\n📨 <b>Name :</b> {name}\n🖲 <b>Trackers ({tracCount}) :</b> \n{tracker} \n 🔗 <a href='https://t.me/share/url?url={quote(mag_link)}'>Share To Telegram</a>"
-
 async def incoming_message_f(client, message):
     """/leech command or /gleech command"""
     user_command = message.command[0]
@@ -129,7 +114,8 @@ async def incoming_message_f(client, message):
         LOGGER.info(dl_url)
 
     elif len(message.command) > 2 and message.command[2] == "|":
-        dl_url, cf_name = message.command[1], message.command[3]
+        dl_url = message.command[1]
+        cf_name = message.text.split('|', 1)[1].strip()
 
     else:
         await i_m_sefg.edit((BotTheme(g_id)).WRONG_DEF_COMMAND)

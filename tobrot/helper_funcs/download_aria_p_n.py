@@ -8,16 +8,17 @@
 # All Right Reserved
 
 import sys
-from urllib.request import urlretrieve
+from urllib.request import urlretrieve 
 from asyncio import create_subprocess_exec, subprocess, sleep as asleep
 from os import path as opath, rename as orename, walk as owalk
 from time import sleep as tsleep, time
 from aria2p import API as ariaAPI, Client as ariClient, client as aria2pclient
 from subprocess import check_output
+from natsort import natsorted
 from pyrogram.errors import FloodWait, MessageNotModified
 from tobrot import (
     ARIA_TWO_STARTED_PORT,
-    CUSTOM_FILE_NAME,
+    CUSTOM_FILE_NAME as CUSTOM_PREFIX,
     EDIT_SLEEP_TIME_OUT,
     LOGGER,
     UPDATES_CHANNEL, 
@@ -60,6 +61,79 @@ async def aria_start():
             host="http://localhost", port=ARIA_TWO_STARTED_PORT, secret=""
         )
     )
+
+def __changeFileName(to_upload_file, u_id):
+    defDic = ["", "", "", 0, ""]
+    preDicData = PRE_DICT.get(u_id, defDic)
+    prefix, filename_, suffix, no, filter = preDicData[0], preDicData[1], preDicData[2], preDicData[3], preDicData[4]
+    CUSTOM_PREFIX = prefix
+    CUSTOM_SUFFIX = suffix
+    if filter:
+        if not filter.startswith("|"):
+            filter = f"|{filter}"
+        slit = filter.split("|")
+        if not opath.isfile(to_upload_file):
+            for root, _, files in owalk(to_upload_file):
+                for org in files:
+                    p_name = f"{root}/{org}"
+                    for rep in range(1, len(slit)):
+                        args = slit[rep].split(":")
+                        if len(args) == 3:
+                            __newFileName = org.replace(args[0], args[1], int(args[2]))
+                        else:
+                            __newFileName = org.replace(args[0], args[1])
+                    n_name = f"{root}/{__newFileName}"
+                    orename(p_name, n_name)
+
+    if filename_:
+        if not opath.isfile(to_upload_file):
+            for root, _, files in owalk(to_upload_file):
+                n = int(no)
+                for org in natsorted(files):
+                    p_name = f"{root}/{org}"
+                    n += 1
+                    n_name = f"{root}/{filename_.format(no = '%.2d' % n)}"
+                    orename(p_name, n_name)
+    elif CUSTOM_PREFIX:
+        if opath.isfile(to_upload_file):
+            if not to_upload_file.startswith(CUSTOM_PREFIX):
+                orename(to_upload_file, f"{CUSTOM_PREFIX}{to_upload_file}")
+                to_upload_file = f"{CUSTOM_PREFIX}{to_upload_file}"
+        else:
+            for root, _, files in owalk(to_upload_file):
+                for org in files:
+                    p_name = f"{root}/{org}"
+                    if not org.startswith(CUSTOM_PREFIX):
+                        n_name = f"{root}/{CUSTOM_PREFIX}{org}"
+                        orename(p_name, n_name)
+    elif CUSTOM_SUFFIX:
+     # <!--- Total Code Made by 5MysterySD, Give Credits at least !! --->
+        sufLen = len(CUSTOM_SUFFIX)
+        if opath.isfile(to_upload_file):
+            fileDict = to_upload_file.split('.')
+            _extIn = 1 + len(fileDict[-1])
+            _extOutName = '.'.join(l for l in fileDict[0:(len(fileDict)-1)]).replace('.', '_').replace('-', '_')
+            if not _extOutName.endswith(CUSTOM_SUFFIX):
+                _extOutName += CUSTOM_SUFFIX
+                _newExtFileName = _extOutName + f"{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                if len(_extOutName) > (64 - (sufLen + _extIn)):
+                    _newExtFileName = _extOutName[0 : (64 - (sufLen + _extIn))] + f"{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                orename(to_upload_file, _newExtFileName)
+                to_upload_file = _newExtFileName
+        else:
+            for root, _, files in owalk(to_upload_file):
+                for org in files:
+                    p_name = f"{root}/{org}"
+                    fileDict = org.split('.')
+                    _extIn = 1 + len(fileDict[-1])
+                    _extOutName = '.'.join(l for l in fileDict[0:(len(fileDict)-1)]).replace('.', '_').replace('-', '_')
+                    if not _extOutName.endswith(CUSTOM_SUFFIX):
+                        _extOutName += CUSTOM_SUFFIX
+                        _newExtFileName = f"{root}/{_extOutName}{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                        if len(_extOutName) > (64 - (sufLen + _extIn)):
+                            _newExtFileName = f"{root}/{_extOutName[0:(64 - (sufLen + _extIn))]}{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                        orename(p_name, _newExtFileName)
+    return to_upload_file
 
 def add_magnet(aria_instance, magnetic_link, c_file_name, user_msg):
     options = None
@@ -228,23 +302,7 @@ async def call_apropriate_function(
             )
     u_id = user_message.from_user.id
     if to_upload_file:
-        prefix = PRE_DICT.get(u_id, "")
-        CUSTOM_FILE_NAME = prefix
-
-        if CUSTOM_FILE_NAME != "":
-            if opath.isfile(to_upload_file):
-                if not to_upload_file.startswith(CUSTOM_FILE_NAME):
-                    orename(to_upload_file, f"{CUSTOM_FILE_NAME}{to_upload_file}")
-                    to_upload_file = f"{CUSTOM_FILE_NAME}{to_upload_file}"
-            else:
-                for root, _, files in owalk(to_upload_file):
-                    for org in files:
-                        p_name = f"{root}/{org}"
-                        if not org.startswith(CUSTOM_FILE_NAME):
-                            n_name = f"{root}/{CUSTOM_FILE_NAME}{org}"
-                            orename(p_name, n_name)
-                to_upload_file = to_upload_file
-
+        to_upload_file = __changeFileName(to_upload_file, u_id)
     if cstom_file_name:
         orename(to_upload_file, cstom_file_name)
         to_upload_file = cstom_file_name

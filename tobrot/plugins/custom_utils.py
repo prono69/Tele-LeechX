@@ -7,6 +7,7 @@
 # This is Part of < https://github.com/5MysterySD/Tele-LeechX >
 # All Right Reserved
 
+from re import split as rsplit
 from pyrogram import enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 
@@ -30,9 +31,36 @@ async def prefix_set(client, message):
     else:
         txt = ""
     prefix_ = txt
-    PRE_DICT[user_id_] = prefix_
+    if prefix_ != '':
+        prefix_ = rsplit(r'c:|s:|no:|\|', prefix_)[0].strip()
+
+    preCus = txt.split('c:')
+    if len(preCus) > 1:
+        preCus = preCus[1]
+        fname = preCus.split('s:')[0].strip()
+    else:
+        fname = ""
+    preSuf = txt.split('s:')
+    if len(preSuf) > 1:
+        preSuf = preSuf[1]
+        suffix = preSuf.split('no:')[0]
+    else:
+        suffix = ""
+    preNo = txt.split('no:')
+    if len(preNo) > 1:
+        preNo = preNo[1]
+        no = preNo.split('|')[0].strip()
+    else:
+        no = '0'
+    preRep = txt.split('|')
+    if len(preRep) > 1:
+        args = preRep[1]
+    else:
+        args = ""
+    tData = [prefix_, fname, suffix, no, args]
+    PRE_DICT[user_id_] = tData
     if DB_URI:
-        DatabaseManager().user_pre(user_id_, prefix_)
+        DatabaseManager().user_pre(user_id_, tData)
         LOGGER.info(f"[DB] User : {user_id_} Prefix Saved to Database")
 
     pre_text = await lm.edit_text(((BotTheme(user_id_)).PREFIX_MSG).format(
