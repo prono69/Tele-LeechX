@@ -19,7 +19,7 @@ from pyrogram import enums
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from tobrot import UPDATES_CHANNEL, TGH_AUTHOR, TGH_AUTHOR_URL, LOGGER
-from tobrot.plugins import runcmd 
+from tobrot.plugins import runcmd, getUserOrChaDetails
 from tobrot.helper_funcs.display_progress import humanbytes
 from tobrot.bot_theme.themes import BotTheme
 
@@ -60,7 +60,7 @@ async def mediainfo(client, message):
     # Generate MediaInfo of Direct Links or Media Type 
     # ToDo : Add File to Direct Link, Getting MediaInfo without download File
 
-    u_id_ = message.from_user.id
+    u_id_, _ = getUserOrChaDetails(message)
     reply_to = message.reply_to_message
     link_send = message.text.split(" ")
     x_media = None

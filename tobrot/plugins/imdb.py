@@ -13,6 +13,7 @@ from pycountry import countries as conn
 
 from tobrot import LOGGER
 from tobrot import app, MAX_LIST_ELM, DEF_IMDB_TEMPLATE,  LOGGER
+from tobrot.plugins import getUserOrChaDetails
 from tobrot.plugins.custom_utils import *
 from tobrot.helper_funcs.display_progress import TimeFormatter
 
@@ -26,7 +27,7 @@ async def imdb_search(client, message):
     if ' ' in message.text:
         k = await message.reply('<code>Searching IMDB ...</code>', parse_mode=enums.ParseMode.HTML)
         r, title = message.text.split(None, 1)
-        user_id_ = message.from_user.id
+        user_id_, _ = getUserOrChaDetails(message)
         if title.lower().startswith("tt"):
             movieid = title.replace("tt", "")
             movie = imdb.get_movie(movieid)
@@ -110,7 +111,7 @@ async def get_poster(query, bulk=False, id=False, file=None):
     else:
         plot = movie.get('plot outline')
     if plot and len(plot) > 800:
-        plot = plot[:800] + "..."
+        plot = f"{plot[:800]}..."
     return {
         'title': movie.get('title'),
         'votes': movie.get('votes'),

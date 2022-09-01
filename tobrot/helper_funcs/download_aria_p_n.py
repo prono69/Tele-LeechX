@@ -37,6 +37,7 @@ from tobrot.helper_funcs.download import download_tg
 from tobrot.bot_theme.themes import BotTheme
 from tobrot.helper_funcs.direct_link_generator import url_link_generate
 from tobrot.helper_funcs.exceptions import DirectDownloadLinkException
+from tobrot.plugins import getUserOrChaDetails
 from tobrot.plugins.custom_utils import *
 from tobrot.plugins import is_appdrive_link, is_gdtot_link, is_hubdrive_link 
 from tobrot.helper_funcs.display_progress import TimeFormatter
@@ -112,12 +113,16 @@ def __changeFileName(to_upload_file, u_id):
         if opath.isfile(to_upload_file):
             fileDict = to_upload_file.split('.')
             _extIn = 1 + len(fileDict[-1])
-            _extOutName = '.'.join(l for l in fileDict[0:(len(fileDict)-1)]).replace('.', '_').replace('-', '_')
+            _extOutName = '.'.join(fileDict[:-1]).replace('.', '_').replace('-', '_')
             if not _extOutName.endswith(CUSTOM_SUFFIX):
                 _extOutName += CUSTOM_SUFFIX
-                _newExtFileName = _extOutName + f"{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                _newExtFileName = f"{_extOutName}{CUSTOM_SUFFIX}.{fileDict[-1]}"
                 if len(_extOutName) > (64 - (sufLen + _extIn)):
-                    _newExtFileName = _extOutName[0 : (64 - (sufLen + _extIn))] + f"{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                    _newExtFileName = (
+                        _extOutName[: 64 - (sufLen + _extIn)]
+                        + f"{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                    )
+
                 orename(to_upload_file, _newExtFileName)
                 to_upload_file = _newExtFileName
         else:
@@ -126,12 +131,13 @@ def __changeFileName(to_upload_file, u_id):
                     p_name = f"{root}/{org}"
                     fileDict = org.split('.')
                     _extIn = 1 + len(fileDict[-1])
-                    _extOutName = '.'.join(l for l in fileDict[0:(len(fileDict)-1)]).replace('.', '_').replace('-', '_')
+                    _extOutName = '.'.join(fileDict[:-1]).replace('.', '_').replace('-', '_')
                     if not _extOutName.endswith(CUSTOM_SUFFIX):
                         _extOutName += CUSTOM_SUFFIX
                         _newExtFileName = f"{root}/{_extOutName}{CUSTOM_SUFFIX}.{fileDict[-1]}"
                         if len(_extOutName) > (64 - (sufLen + _extIn)):
-                            _newExtFileName = f"{root}/{_extOutName[0:(64 - (sufLen + _extIn))]}{CUSTOM_SUFFIX}.{fileDict[-1]}"
+                            _newExtFileName = f"{root}/{_extOutName[:64 - (sufLen + _extIn)]}{CUSTOM_SUFFIX}.{fileDict[-1]}"
+
                         orename(p_name, _newExtFileName)
     return to_upload_file
 
@@ -300,7 +306,7 @@ async def call_apropriate_function(
             LOGGER.info(
                 f"Can't extract {opath.basename(to_upload_file)}, Uploading the same file"
             )
-    u_id = user_message.from_user.id
+    u_id, u_men = getUserOrChaDetails(user_message)
     if to_upload_file:
         to_upload_file = __changeFileName(to_upload_file, u_id)
     if cstom_file_name:
@@ -308,18 +314,15 @@ async def call_apropriate_function(
         to_upload_file = cstom_file_name
 
     response = {}
-
-    u_men = user_message.from_user.mention 
-    user_id = user_message.from_user.id
     if com_g:
         if is_cloud:
             await upload_to_gdrive(
-                to_upload_file, sent_message_to_update_tg_p, user_message, user_id
+                to_upload_file, sent_message_to_update_tg_p, user_message, u_id
             )
         else:
             start_upload = time()
             final_response = await upload_to_tg(
-                sent_message_to_update_tg_p, to_upload_file, user_id, response, client
+                sent_message_to_update_tg_p, to_upload_file, u_id, response, client
             )
             end_upload = time()
             if not final_response:
@@ -388,8 +391,9 @@ async def check_progress_for_dl(aria2, gid, event, previous_message, user_messag
                 LOGGER.info(
                     f"Downloaded Successfully : `{file.name} ({file.total_length_string()})` "
                 )
+                u_id, _ = getUserOrChaDetails(user_message)
                 if not file.is_metadata:
-                    await event.edit(((BotTheme(user_message.from_user.id)).DOWN_COM_MSG).format(
+                    await event.edit(((BotTheme(u_id)).DOWN_COM_MSG).format(
                         filename = file.name,
                         size = file.total_length_string()
                     ))

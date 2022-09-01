@@ -13,10 +13,12 @@ from pyrogram import enums
 
 from tobrot import LOGGER
 from tobrot.bot_theme.themes import BotTheme
+from tobrot.plugins import getUserOrChaDetails
 from tobrot.helper_funcs.display_progress import humanbytes
 
 async def get_speed(self, message):
     imspd = await message.reply("`Running Speed Test...`")
+    user_id, _ = getUserOrChaDetails(message)
     test = Speedtest()
     test.get_best_server()
     test.download()
@@ -24,7 +26,7 @@ async def get_speed(self, message):
     test.results.share()
     result = test.results.dict()
     path = (result['share'])
-    string_speed = ((BotTheme(message.from_user.id)).SPEEDTEST_MSG).format(
+    string_speed = ((BotTheme(user_id)).SPEEDTEST_MSG).format(
         upload = humanbytes(result['upload'] / 8),
         download = humanbytes(result['download'] / 8),
         ping = result['ping'],

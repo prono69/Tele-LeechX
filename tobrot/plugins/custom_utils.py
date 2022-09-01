@@ -14,14 +14,12 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from tobrot import LOGGER, DB_URI, PRE_DICT, CAP_DICT, IMDB_TEMPLATE
 from tobrot.database.db_func import DatabaseManager
 from tobrot.bot_theme.themes import BotTheme
+from tobrot.plugins import getUserOrChaDetails
 
 async def prefix_set(client, message):
     '''  /setpre command '''
-    lm = await message.reply_text(
-        text="`Setting Up ...`",
-    )
-    user_id_ = message.from_user.id 
-    u_men = message.from_user.mention
+    lm = await message.reply_text("`Setting Up ...`")
+    user_id_, u_men = getUserOrChaDetails(message)
     pre_send = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
     if len(pre_send) > 1:
@@ -53,10 +51,7 @@ async def prefix_set(client, message):
     else:
         no = '0'
     preRep = txt.split('|')
-    if len(preRep) > 1:
-        args = preRep[1]
-    else:
-        args = ""
+    args = preRep[1] if len(preRep) > 1 else ""
     tData = [prefix_, fname, suffix, no, args]
     PRE_DICT[user_id_] = tData
     if DB_URI:
@@ -75,11 +70,8 @@ async def prefix_set(client, message):
 async def caption_set(client, message):
     '''  /setcap command '''
 
-    lk = await message.reply_text(
-        text="`Setting Up ...`",
-    )
-    user_id_ = message.from_user.id 
-    u_men = message.from_user.mention
+    lk = await message.reply_text("`Setting Up ...`")
+    user_id_, u_men = getUserOrChaDetails(message)
     cap_send = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
     if len(cap_send) > 1:
@@ -112,8 +104,7 @@ async def template_set(client, message):
     lm = await message.reply_text(
         text="`Checking Input ...`",
     )
-    user_id_ = message.from_user.id 
-    u_men = message.from_user.mention
+    user_id_, u_men = getUserOrChaDetails(message)
     tem_send = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
     if len(tem_send) > 1:
@@ -140,15 +131,32 @@ async def theme_set(client, message):
     lk = await message.reply_text(
         text="`Fetching Current Themes ...`",
     )
-    user_id_ = message.from_user.id 
-    u_men = message.from_user.mention
+    user_id_, u_men = getUserOrChaDetails(message)
 
-    theme_btn = InlineKeyboardMarkup([
-        [InlineKeyboardButton("fx-optimised-theme", callback_data = f"theme {user_id_} fx-optimised-theme")],
-        [InlineKeyboardButton("fx-minimal-theme", callback_data = f"theme {user_id_} fx-minimal-theme")],
-        [InlineKeyboardButton("fx-random-theme", callback_data = f"theme {user_id_} fx-random-theme")],
-        [InlineKeyboardButton("⛔️ Close ⛔️", callback_data = f"close")],
-    ])
+    theme_btn = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "fx-optimised-theme",
+                    callback_data=f"theme {user_id_} fx-optimised-theme",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "fx-minimal-theme",
+                    callback_data=f"theme {user_id_} fx-minimal-theme",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "fx-random-theme",
+                    callback_data=f"theme {user_id_} fx-random-theme",
+                )
+            ],
+            [InlineKeyboardButton("⛔️ Close ⛔️", callback_data="close")],
+        ]
+    )
+
 
     await lk.edit_text(((BotTheme(user_id_)).THEME_MSG).format(
             u_men = u_men,

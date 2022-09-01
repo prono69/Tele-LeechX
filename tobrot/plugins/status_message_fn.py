@@ -21,7 +21,8 @@ from psutil import virtual_memory, cpu_percent, net_io_counters
 
 from pyrogram.errors import FloodWait, MessageIdInvalid, MessageNotModified
 from pyrogram import enums
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from tobrot.plugins import getUserOrChaDetails
 from tobrot.helper_funcs.admin_check import AdminCheck
 from tobrot import (
     AUTH_CHANNEL,
@@ -48,38 +49,33 @@ from tobrot.database.db_func import DatabaseManager
 from tobrot.bot_theme.themes import BotTheme
 
 async def upload_as_doc(client, message):
-    uid = message.from_user.id
+    uid, u_tag = getUserOrChaDetails(message)
     user_specific_config[uid] = True
     if DB_URI:
         DatabaseManager().user_doc(uid)
         LOGGER.info("[DB] User Toggle DOC Settings Saved to Database")
     await message.reply_text(((BotTheme(uid)).TOGGLEDOC_MSG).format(
-        u_men = message.from_user.mention,
+        u_men = u_tag,
         u_id = uid,
         UPDATES_CHANNEL = UPDATES_CHANNEL
     ))
 
 async def upload_as_video(client, message):
-    uid = message.from_user.id
+    uid, u_tag = getUserOrChaDetails(message)
     user_specific_config[uid] = False
     if DB_URI:
         DatabaseManager().user_vid(uid)
         LOGGER.info("[DB] User Toggle VID Settings Saved to Database")
     await message.reply_text(((BotTheme(uid)).TOGGLEVID_MSG).format(
-        u_men = message.from_user.mention,
+        u_men = u_tag,
         u_id = uid,
         UPDATES_CHANNEL = UPDATES_CHANNEL
     ))
 
 def progress_bar(percentage):
-    p_used = '●'
-    p_total = '○'
-    if isinstance(percentage, str):
-        return ''
-    try:
-        percentage=int(percentage)
-    except:
-        percentage = 0
+    p_used, p_total = '●', '○'
+    try: percentage=int(percentage)
+    except: percentage = 0
     return ''.join(p_used if i <= percentage // 10 else p_total for i in range(10))
 
 def bot_button_stats():
@@ -104,7 +100,7 @@ def bot_button_stats():
 ┗━━━━━━━━━━━━━━━━╹'''
 
 async def status_message_f(client, message):
-    u_id_ = message.from_user.id
+    u_id_, u_tag = getUserOrChaDetails(message)
     aria_i_p = await aria_start()
     to_edit = await message.reply("🧭 𝐆𝐞𝐭𝐭𝐢𝐧𝐠 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 𝐒𝐭𝐚𝐭𝐮𝐬 . .")
     chat_id = int(message.chat.id)
@@ -131,7 +127,7 @@ async def status_message_f(client, message):
             if file.status == "active":
                 umess = user_settings[file.gid]
                 percentage = int(file.progress_string(0).split('%')[0])
-                digits = [int(x) for x in str(("{}").format("%.2d" % percentage))]
+                digits = [int(x) for x in f'{"%.2d" % percentage}']
                 prog = "[{0}{1}{2}]".format(
                     "".join([FINISHED_PROGRESS_STR for _ in range(floor(percentage / 5))]),
                     HALF_FINISHED if floor(digits[1]) > 5 else UN_FINISHED_PROGRESS_STR,
@@ -154,9 +150,10 @@ async def status_message_f(client, message):
                         etime = TimeFormatter((curTime - inTime) * 1000)
                     )
                 except: pass
+                usr_id, tag_me = getUserOrChaDetails(umess)
                 msg += ((BotTheme(u_id_)).STATUS_MSG_3).format(
-                    u_men = umess.from_user.mention,
-                    uid = umess.from_user.id
+                    u_men = tag_me,
+                    uid = usr_id
                 )
                 if is_file is None:
                     msg += ((BotTheme(u_id_)).STATUS_MSG_4).format(
@@ -167,20 +164,20 @@ async def status_message_f(client, message):
                         num_seeders = file.num_seeders,
                         connections = file.connections
                     )
-                msg += ((BotTheme(message.from_user.id)).STATUS_MSG_6).format(
+                msg += ((BotTheme(u_id_)).STATUS_MSG_6).format(
                     gid = file.gid
                 )
 
         ms_g = (BotTheme(u_id_)).BOTTOM_STATUS_MSG
         if UPDATES_CHANNEL:
             ms_g += f"\n♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL}♦️"
-        umen = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
+        umen = f'<a href="tg://user?id={u_id_}">{u_tag}</a>'
         mssg = ((BotTheme(u_id_)).TOP_STATUS_MSG).format(
             umen = umen,
             uid = u_id_
         )
         button_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton('Sᴛᴀᴛs\nCʜᴇᴄᴋ', callback_data="stats"),
+            [InlineKeyboardButton('Sᴛᴀᴛᴜs\nCʜᴇᴄᴋ', callback_data="stats"),
              InlineKeyboardButton('Cʟᴏsᴇ', callback_data="admin_close")]
         ])
 
@@ -240,6 +237,14 @@ async def cancel_message_f(client, message):
         await message.delete()
 
 async def exec_message_f(client, message):
+    if message.chat.type == enums.ChatType.CHANNEL:
+        if message.chat.id not in AUTH_CHANNEL:
+            return
+    elif message.chat.type == enums.ChatType.SUPERGROUP:
+        if hasattr(message.from_user, 'id') and message.from_user.id not in AUTH_CHANNEL:
+            return
+        elif message.chat.id not in AUTH_CHANNEL:
+            return
     DELAY_BETWEEN_EDITS = 0.3
     PROCESS_RUN_TIME = 100
     cmd = message.text.split(" ", maxsplit=1)[1]
@@ -283,17 +288,27 @@ async def exec_message_f(client, message):
 
 async def upload_document_f(client, message):
     imsegd = await message.reply_text("⚙️ Processing ...")
-    if message.from_user.id in AUTH_CHANNEL and " " in message.text:
+    if hasattr(message.from_user, 'id'):
+        u_id_ = message.from_user.id
+    else:
+        u_id_ = message.chat.id
+    if u_id_ in AUTH_CHANNEL and " " in message.text:
         recvd_command, local_file_name = message.text.split(" ", 1)
         recvd_response = await upload_to_tg(
-            imsegd, local_file_name, message.from_user.id, {}, client
+            imsegd, local_file_name, u_id_, {}, client
         )
         LOGGER.info(recvd_response)
     await imsegd.delete()
 
 async def eval_message_f(client, message):
-    if message.from_user.id not in AUTH_CHANNEL:
-        return
+    if message.chat.type == enums.ChatType.CHANNEL:
+        if message.chat.id not in AUTH_CHANNEL:
+            return
+    elif message.chat.type == enums.ChatType.SUPERGROUP:
+        if hasattr(message.from_user, 'id') and message.from_user.id not in AUTH_CHANNEL:
+            return
+        elif message.chat.id not in AUTH_CHANNEL:
+            return
     status_message = await message.reply_text("Processing ...")
     cmd = message.text.split(" ", maxsplit=1)[1]
 
@@ -346,12 +361,10 @@ async def eval_message_f(client, message):
 
 
 async def aexec(code, client, message):
-    exec(
-        (
+    exec((
             "async def __aexec(client, message): "
             + "".join(f"\n {l}" for l in code.split("\n"))
-        )
-    )
+    ))
 
     return await locals()["__aexec"](client, message)
 
@@ -386,4 +399,3 @@ async def upload_log_file(client, message):
             LOGGER.info(textLog)
         h, m, s = up_time(time() - BOT_START_TIME)
         await message.reply_document(LOG_FILE_NAME, caption=f"**Full Log**\n\n**Bot Uptime:** `{h}h, {m}m, {s}s`")
-

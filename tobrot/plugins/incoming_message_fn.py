@@ -30,7 +30,7 @@ from tobrot.helper_funcs.extract_link_from_message import extract_link
 from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.helper_funcs.youtube_dl_extractor import extract_youtube_dl_formats
 from tobrot.helper_funcs.ytplaylist import yt_playlist_downg
-from tobrot.plugins import getDetails
+from tobrot.plugins import getDetails, getUserOrChaDetails
 from tobrot.plugins.force_sub_handler import handle_force_sub
 from tobrot.bot_theme.themes import BotTheme
 
@@ -48,7 +48,7 @@ async def incoming_purge_message_f(client, message):
 async def incoming_message_f(client, message):
     """/leech command or /gleech command"""
     user_command = message.command[0]
-    g_id = message.from_user.id
+    g_id, tag_me = getUserOrChaDetails(message)
     txtCancel = False
 
     if FSUB_CHANNEL:
@@ -66,7 +66,7 @@ async def incoming_message_f(client, message):
             send.delete()
         except Exception as e:
             LOGGER.warning(e)
-            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
+            uname = f'<a href="tg://user?id={g_id}">{tag_me}</a>'
             button_markup = InlineKeyboardMarkup([
                     [InlineKeyboardButton("⚡️ Click Here to Start Me ⚡️", url=f"http://t.me/{bot.username}")]
                 ])
@@ -75,24 +75,22 @@ async def incoming_message_f(client, message):
             message = await message.reply_text(text=startwarn, parse_mode=enums.ParseMode.HTML, quote=True, reply_markup=button_markup)
             return
 
-    text__, txtCancel = getDetails(client, message, 'Leech')
-
     if USER_DTS:
+        text__, txtCancel = getDetails(client, message, 'Leech')
         link_text = await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
-    
-    endText = f"\n📬 <b>Source :</b> <a href='{message.link}'>Click Here</a>\n\n#LeechStart #FXLogs"
-    if not txtCancel:
-        if LEECH_LOG and USER_DTS:
-            text__ += endText
-            logs_msg = bot.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-        LOGGER.info(f"Leech Started : {message.from_user.first_name}")
+
+        endText = f"\n📬 <b>Source :</b> <a href='{message.link}'>Click Here</a>\n\n#LeechStart #FXLogs"
+        if not txtCancel:
+            if LEECH_LOG:
+                text__ += endText
+                logs_msg = bot.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+            LOGGER.info(f"Leech Started : {tag_me}")
 
     i_m_sefg = await message.reply_text("<code>Processing ... 🔄</code>", quote=True)
-    rep_mess = message.reply_to_message
     is_file = False
     dl_url = ''
     cf_name = ''
-    if rep_mess:
+    if rep_mess := message.reply_to_message:
         file_name = ''
         if rep_mess.media:
             file = [rep_mess.document, rep_mess.video, rep_mess.audio]
@@ -104,7 +102,7 @@ async def incoming_message_f(client, message):
         else:
             if user_command == BotCommands.LeechCommand.lower():
                 await i_m_sefg.edit(((BotTheme(g_id)).WRONG_COMMAND).format(
-                    u_men = message.from_user.mention
+                    u_men = tag_me
                 ))
                 return
             is_file = True
@@ -121,9 +119,8 @@ async def incoming_message_f(client, message):
         await i_m_sefg.edit((BotTheme(g_id)).WRONG_DEF_COMMAND)
         return
     if dl_url is not None:
-        current_user_id = message.from_user.id
         new_download_location = opath.join(
-            DOWNLOAD_LOCATION, str(current_user_id), str(time())
+            DOWNLOAD_LOCATION, str(g_id), str(time())
         )
         if not opath.isdir(new_download_location):
             makedirs(new_download_location)
@@ -133,8 +130,8 @@ async def incoming_message_f(client, message):
             aria_i_p = await aria_start()
 
         await i_m_sefg.edit_text(((BotTheme(g_id)).DOWNLOAD_ADDED_MSG).format(
-            u_men = message.from_user.mention,
-            u_id = message.from_user.id,
+            u_men = tag_me,
+            u_id = g_id,
             status_cmd = BotCommands.StatusCommand,
             UPDATES_CHANNEL = UPDATES_CHANNEL
         ))
@@ -147,17 +144,23 @@ async def incoming_message_f(client, message):
         cloud_zip = f"{GLEECH_ZIP_COMMAND}@{bot.username}"
         cloud_unzip = f"{GLEECH_UNZIP_COMMAND}@{bot.username}"
 
-        if user_command == BotCommands.ExtractCommand.lower() or user_command == bot_unzip.lower():
+        if user_command in [
+            BotCommands.ExtractCommand.lower(),
+            bot_unzip.lower(),
+        ]:
             is_unzip = True
-        elif user_command == BotCommands.ArchiveCommand.lower() or user_command == bot_zip.lower():
+        elif user_command in [
+            BotCommands.ArchiveCommand.lower(),
+            bot_zip.lower(),
+        ]:
             is_zip = True
 
-        if user_command == GLEECH_COMMAND.lower() or user_command == cloud.lower():
+        if user_command in [GLEECH_COMMAND.lower(), cloud.lower()]:
             is_cloud = True
-        if user_command == GLEECH_UNZIP_COMMAND.lower() or user_command == cloud_unzip.lower():
+        if user_command in [GLEECH_UNZIP_COMMAND.lower(), cloud_unzip.lower()]:
             is_cloud = True
             is_unzip = True
-        elif user_command == GLEECH_ZIP_COMMAND.lower() or user_command == cloud_zip.lower():
+        elif user_command in [GLEECH_ZIP_COMMAND.lower(), cloud_zip.lower()]:
             is_cloud = True
             is_zip = True
 
@@ -182,8 +185,7 @@ async def incoming_message_f(client, message):
         ))
 
 async def incoming_youtube_dl_f(client, message):
-    current_user_id = message.from_user.id
-    u_men = message.from_user.mention
+    current_user_id, u_men = getUserOrChaDetails(message)
     credit = await message.reply_text(
         f"<b><i>🛃 Working For 🛃:</i></b> {u_men}", parse_mode=enums.ParseMode.HTML
     )
@@ -233,7 +235,7 @@ async def incoming_youtube_dl_f(client, message):
 
 async def g_yt_playlist(client, message):
     user_command = message.command[0]
-    usr_id = message.from_user.id
+    usr_id, u_men = getUserOrChaDetails(message)
     is_cloud = False
     url = None
     if message.reply_to_message:
@@ -248,7 +250,6 @@ async def g_yt_playlist(client, message):
         await message.reply_text("<b> Reply with Youtube Playlist link</b>", quote=True)
         return
     if "youtube.com/playlist" in url:
-        u_men = message.from_user.mention
         i_m_sefg = await message.reply_text(
             f"<b>Ok Fine {u_men} Bro!!:\n Your Request has been ADDED</b>\n\n <code> Please wait until Upload</code>",
             parse_mode=enums.ParseMode.HTML
@@ -259,7 +260,7 @@ async def g_yt_playlist(client, message):
         await message.reply_text("<b>YouTube playlist link only 🙄</b>", quote=True)
 
 async def g_clonee(client, message):
-    g_id = message.from_user.id
+    g_id, _ = getUserOrChaDetails(message)
     _link = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
     if len(_link) > 1:
@@ -295,7 +296,7 @@ __Google Drive, GDToT, AppDrive, Kolop, HubDrive, DriveLinks__'''
 
 
 async def rename_tg_file(client, message):
-    usr_id = message.from_user.id
+    usr_id, tag_me = getUserOrChaDetails(message)
     text__, _ = getDetails(client, message, 'Rename')
     await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
     if not message.reply_to_message:
@@ -327,7 +328,7 @@ async def rename_tg_file(client, message):
             timeuti = TimeFormatter((end_upload - start_upload) * 1000)
             mention_req_user = ((BotTheme(usr_id)).TOP_LIST_FILES_MSG).format(
                 user_id = usr_id,
-                u_men = message.from_user.mention,
+                u_men = tag_me,
                 timeuti = timeuti
             )
             message_credits = ((BotTheme(usr_id)).BOTTOM_LIST_FILES_MSG).format(

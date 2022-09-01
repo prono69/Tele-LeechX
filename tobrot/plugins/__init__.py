@@ -59,12 +59,11 @@ def magnet_parse(mag_link):
     return f"🔸️ <b>Hash :</b> <i>{hashh}</i>\n📨 <b>Name :</b> {name}\n🖲 <b>Trackers ({tracCount}) :</b> \n{tracker} \n 🔗 <a href='https://t.me/share/url?url={quote(mag_link)}'>Share To Telegram</a>"
 
 def getDetails(client, message, func_txt: str):
-    g_id = message.from_user.id
-    u_men = message.from_user.mention
+    g_id, u_men = getUserOrChaDetails(message)
     link_send = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
     txtCancel = False
-    text__ = f"<i>⚡️{func_txt} Initiated⚡️</i>\n\n👤 <b>User</b> : <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name}</a>\n🆔 <b>User ID</b> : #ID{g_id}\n"
+    text__ = f"<i>⚡️{func_txt} Initiated⚡️</i>\n\n👤 <b>User</b> : <a href='tg://user?id={g_id}'>{u_men}</a>\n🆔 <b>User ID</b> : #ID{g_id}\n"
     if len(link_send) > 1:
         link = link_send[1]
         if link.lower().startswith("magnet:"):
@@ -114,3 +113,12 @@ def getDetails(client, message, func_txt: str):
         link = "N/A"
         text__ += f"🔗 <b>Link</b> : <code>{link}</code>"
     return text__, txtCancel
+
+def getUserOrChaDetails(mess):
+    if hasattr(mess.from_user, 'id'):
+        uid = mess.from_user.id
+        u_tag = mess.from_user.mention
+    else:
+        uid = str(mess.chat.id)[4:]
+        u_tag = (mess.chat.title if mess.author_signature is None else mess.author_signature)
+    return uid, u_tag

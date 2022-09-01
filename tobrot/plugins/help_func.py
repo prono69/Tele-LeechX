@@ -12,14 +12,15 @@ from time import time
 from subprocess import check_output
 from psutil import disk_usage, cpu_percent, swap_memory, cpu_count, virtual_memory, net_io_counters, boot_time
 from pyrogram import enums
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 
 from tobrot import *
 from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.bot_theme.themes import BotTheme
+from tobrot.plugins import getUserOrChaDetails
 
 async def stats(client, message):
-    user_id = message.from_user.id
+    user_id, _ = getUserOrChaDetails(message)
     stats = (BotTheme(user_id)).STATS_MSG_1
     if opath.exists('.git'):
         last_commit = check_output(["git log -1 --date=format:'%I:%M:%S %p %d %B, %Y' --pretty=format:'%cr ( %cd )'"], shell=True).decode()
@@ -75,12 +76,12 @@ async def stats(client, message):
     )
 
 async def help_message_f(client, message):
-
+    user_id, _ = getUserOrChaDetails(message)
     reply_markup = InlineKeyboardMarkup(
         [[InlineKeyboardButton("🆘️ Open Help 🆘️", callback_data = "openHelp_pg1")]]
     )
     await message.reply_text(
-        text = ((BotTheme(message.from_user.id)).HELP_MSG).format(
+        text = ((BotTheme(user_id)).HELP_MSG).format(
         UPDATES_CHANNEL = UPDATES_CHANNEL
     ),
         reply_markup = reply_markup,
@@ -90,13 +91,8 @@ async def help_message_f(client, message):
 
 async def user_settings(client, message):
 
-    uid = message.from_user.id
+    uid, _ = getUserOrChaDetails(message)
     to_edit = await message.reply_text('Fetching your Details . . .')
-    thumb_path = f'{DOWNLOAD_LOCATION}/thumbnails/{uid}.jpg'
-    if not opath.exists(thumb_path):
-        image = 'https://te.legra.ph/file/73712e784132c2af82731.jpg'
-    else:
-        image = thumb_path
     __theme = USER_THEMES.get(uid, 'Default Bot Theme')
     __prefix = PRE_DICT.get(uid, "-")
     __caption = CAP_DICT.get(uid, "-")
@@ -115,6 +111,30 @@ async def user_settings(client, message):
 ┗━━━━━━━━━━━━━━━━━━╹
 
 '''
+    btn = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("🖼 Show Thumb 🖼", callback_data = f"showthumb {uid}")]]
+    )
     await to_edit.delete()
-    await message.reply_photo(photo = image, caption=__text, parse_mode=enums.ParseMode.HTML)
-    
+    await message.reply_photo(photo = 'https://te.legra.ph/file/a3dea655deb2a6f213813.jpg', caption=__text, parse_mode=enums.ParseMode.HTML, reply_markup=btn)
+
+@app.on_callback_query()
+async def settings_callback(client, query: CallbackQuery):
+    if query.data.startswith("showthumb"):
+        getData = (query.data).split(" ")
+        thumb_path = f'{DOWNLOAD_LOCATION}/thumbnails/{getData[1]}.jpg'
+        if not opath.exists(thumb_path):
+            _text = '''┏━ 𝙐𝙨𝙚𝙧 𝘾𝙪𝙧𝙧𝙚𝙣𝙩 𝙎𝙚𝙩𝙩𝙞𝙣𝙜𝙨 ━━╻
+┃
+┣ <b>User Thumbnail :</b> <code>Not Set Yet !</code>
+┃
+┗━━━━━━━━━━━━━━━━━━╹'''
+
+            await query.edit_message_caption(caption=_text)
+        else:
+            _text = '''┏━ 𝙐𝙨𝙚𝙧 𝘾𝙪𝙧𝙧𝙚𝙣𝙩 𝙎𝙚𝙩𝙩𝙞𝙣𝙜𝙨 ━━╻
+┃
+┣ <b>User Thumbnail :</b> <code>Already have A Custom Thumbnail !</code>
+┃
+┗━━━━━━━━━━━━━━━━━━╹'''
+
+            await query.edit_message_media(media=InputMediaPhoto(media=thumb_path, caption=_text))

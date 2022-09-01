@@ -13,11 +13,10 @@ from re import findall
 
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from tobrot import DESTINATION_FOLDER, LOGGER, UPDATES_CHANNEL 
-
+from tobrot.plugins import getUserOrChaDetails
 
 async def check_size_g(client, message):
-    user_id = message.from_user.id 
-    u_men = message.from_user.mention
+    user_id, u_men = getUserOrChaDetails(message)
     del_it = await message.reply_text("`💾 Checking Cloud Size... Please Wait !!!`")
     if opath.exists("rclone.conf"):
         with open("rclone.conf", "r+") as file:

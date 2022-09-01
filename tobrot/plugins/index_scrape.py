@@ -8,6 +8,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from tobrot import LOGGER, UPDATES_CHANNEL
 from tobrot.helper_funcs.display_progress import humanbytes_int
+from tobrot.plugins import getUserOrChaDetails
 from tobrot.plugins.mediainfo import post_to_telegraph
 from tobrot.bot_theme.themes import BotTheme
 
@@ -62,7 +63,7 @@ async def scrapeURL(payload_input, url, username, password):
         no = i + 1
         LOGGER.info(direct_download_link)
         if files_type == "application/vnd.google-apps.folder":
-            url_link = direct_download_link + '/'
+            url_link = f'{direct_download_link}/'
             scpText += f"📄 <strong>{no}. {files_name}</strong> : <br><br><pre>🔖 Directory Index Link :<a href='{url_link}'> Index Link </a> <br>"
             #await asleep(10)
             #scpInText, error = await scrapeURL(payload_input, url, username, password)
@@ -72,11 +73,6 @@ async def scrapeURL(payload_input, url, username, password):
             #    LOGGER.info(tgh_link)
             #    scpText += f"<br>📂 Telegraph Link : <a href='{tgh_link}'> Click Here </a> | 📋 Type : {files_type} "
             scpText += f"<br>📂 Size : - | 📋 Type : {files_type} "
-            try:
-                files_time = deResp["data"]["files"][i]["modifiedTime"]
-                scpText += f"| ⏰ Modified Time : {files_time}<br><br>"
-            except:
-                pass
         else:
             scpText += f"📄 <strong>{no}. {files_name}</strong> : <br><br><pre>🔖 Index Link :<a href='{direct_download_link}'> Index Link </a> <br>"
             try:
@@ -84,11 +80,11 @@ async def scrapeURL(payload_input, url, username, password):
                 scpText += f"<br>📂 Size : {humanbytes_int(files_size)} | 📋 Type : {files_type} "
             except:
                 pass
-            try:
-                files_time   = deResp["data"]["files"][i]["modifiedTime"]
-                scpText += f"| ⏰ Modified Time : {files_time}<br><br>"
-            except:
-                pass
+        try:
+            files_time = deResp["data"]["files"][i]["modifiedTime"]
+            scpText += f"| ⏰ Modified Time : {files_time}<br><br>"
+        except:
+            pass
         scpText += "</pre>"
     LOGGER.info(scpText)
     return scpText, False
@@ -101,8 +97,7 @@ async def index_scrape(client, message):
     )
     username = ""
     password = ""
-    user_id_ = message.from_user.id
-    u_men = message.from_user.mention
+    user_id_, u_men = getUserOrChaDetails(message)
     _send = message.text.split(" ", maxsplit=1)
     reply_to = message.reply_to_message
     if len(_send) > 1:
