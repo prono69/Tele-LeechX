@@ -62,13 +62,13 @@ async def incoming_message_f(client, message):
         LOGGER.info("[Bot PM] Initiated")
         try:
             msg1 = f'Leech Started !!\n'
-            send = bot.send_message(message.from_user.id, text=msg1)
+            send = await client.send_message(message.from_user.id, text=msg1)
             send.delete()
         except Exception as e:
             LOGGER.warning(e)
             uname = f'<a href="tg://user?id={g_id}">{tag_me}</a>'
             button_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⚡️ Click Here to Start Me ⚡️", url=f"http://t.me/{bot.username}")]
+                    [InlineKeyboardButton("⚡️ Click Here to Start Me ⚡️", url=f"http://t.me/{username[0]}")] # Broken, Multi Client No Solution 
                 ])
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't Started me in PM (Private Chat) yet.</b>\n\n" \
                         f"From Now on, Links and Leeched Files in PM and Log Channel Only !!"
@@ -83,7 +83,7 @@ async def incoming_message_f(client, message):
         if not txtCancel:
             if LEECH_LOG:
                 text__ += endText
-                logs_msg = bot.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                logs_msg = await client.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
             LOGGER.info(f"Leech Started : {tag_me}")
 
     i_m_sefg = await message.reply_text("<code>Processing ... 🔄</code>", quote=True)
@@ -138,29 +138,26 @@ async def incoming_message_f(client, message):
         is_zip = False
         is_cloud = False
         is_unzip = False
-        bot_unzip = f"{BotCommands.ExtractCommand}@{bot.username}"
-        bot_zip = f"{BotCommands.ArchiveCommand}@{bot.username}"
-        cloud = f"{GLEECH_COMMAND}@{bot.username}"
-        cloud_zip = f"{GLEECH_ZIP_COMMAND}@{bot.username}"
-        cloud_unzip = f"{GLEECH_UNZIP_COMMAND}@{bot.username}"
+        bot_unzip, bot_zip, cloud, cloud_zip, cloud_unzip = [], [], [], [], []
+        for a in app:
+            ubot = (a.get_me()).username
+            bot_unzip.append(f"{BotCommands.ExtractCommand}@{ubot}".lower())
+            bot_zip.append(f"{BotCommands.ArchiveCommand}@{ubot}".lower())
+            cloud.append(f"{GLEECH_COMMAND}@{ubot}".lower())
+            cloud_zip.append(f"{GLEECH_ZIP_COMMAND}@{ubot}".lower())
+            cloud_unzip.append(f"{GLEECH_UNZIP_COMMAND}@{ubot}".lower())
 
-        if user_command in [
-            BotCommands.ExtractCommand.lower(),
-            bot_unzip.lower(),
-        ]:
+        if user_command == BotCommands.ExtractCommand.lower() or user_command in bot_unzip:
             is_unzip = True
-        elif user_command in [
-            BotCommands.ArchiveCommand.lower(),
-            bot_zip.lower(),
-        ]:
+        elif user_command == BotCommands.ArchiveCommand.lower() or user_command in bot_zip:
             is_zip = True
 
-        if user_command in [GLEECH_COMMAND.lower(), cloud.lower()]:
+        if user_command == GLEECH_COMMAND.lower() or user_command in cloud:
             is_cloud = True
-        if user_command in [GLEECH_UNZIP_COMMAND.lower(), cloud_unzip.lower()]:
+        if user_command == GLEECH_UNZIP_COMMAND.lower() or user_command in cloud_unzip:
             is_cloud = True
             is_unzip = True
-        elif user_command in [GLEECH_ZIP_COMMAND.lower(), cloud_zip.lower()]:
+        elif user_command == GLEECH_ZIP_COMMAND.lower() or user_command in cloud_zip:
             is_cloud = True
             is_zip = True
 

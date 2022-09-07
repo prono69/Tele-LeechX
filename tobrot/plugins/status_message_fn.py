@@ -22,7 +22,7 @@ from psutil import virtual_memory, cpu_percent, net_io_counters
 from pyrogram.errors import FloodWait, MessageIdInvalid, MessageNotModified
 from pyrogram import enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from tobrot.plugins import getUserOrChaDetails
+from tobrot.plugins import getUserOrChaDetails, getUserName
 from tobrot.helper_funcs.admin_check import AdminCheck
 from tobrot import (
     AUTH_CHANNEL,
@@ -218,8 +218,10 @@ async def cancel_message_f(client, message):
         aria_i_p = await aria_start()
         gidData = (message.text).split("_")
         g_id = gidData[1].strip()
-        if g_id.endswith(f'@{bot.username}'):
-            g_id = g_id.replace(f'@{bot.username}', '')
+        UserNames = getUserName()
+        for i in range(0, len(UserNames)):
+            if g_id.endswith(f'@{UserNames[i]}'):
+                g_id = g_id.replace(f'@{UserNames[i]}', '')
         LOGGER.info(f"Cancel GID: {g_id}")
         try:
             downloads = aria_i_p.get_download(g_id)

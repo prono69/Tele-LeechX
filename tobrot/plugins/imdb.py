@@ -188,7 +188,6 @@ def list_to_hash(k, flagg=False):
             listing += f'#{ele}, '
         return listing[:-2]
 
-@app.on_callback_query(filters.regex('^imdb'))
 async def imdb_callback(bot, quer_y: CallbackQuery):
     splitData = quer_y.data.split('#')
     movie, from_user = splitData[1], splitData[2]

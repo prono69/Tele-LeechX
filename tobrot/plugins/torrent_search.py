@@ -96,14 +96,12 @@ async def return_search(query, page=1, sukebei=False):
 message_info = dict()
 ignore = set()
 
-@app.on_message(filters.command(['nyaasi', f'nyaasi@{bot.username}']))
 async def nyaa_search(client, message):
     text = message.text.split(' ')
     text.pop(0)
     query = ' '.join(text)
     await init_search(client, message, query, False)
 
-@app.on_message(filters.command(['sukebei', f'sukebei@{bot.username}']))
 async def nyaa_search_sukebei(client, message):
     text = message.text.split(' ')
     text.pop(0)
@@ -123,12 +121,10 @@ async def init_search(client, message, query, sukebei):
         ]))
         message_info[(reply.chat.id, reply.id)] = message.from_user.id, ttl, query, 1, pages, sukebei
 
-@app.on_callback_query(callback_data('nyaa_nop'))
 async def nyaa_nop(client, callback_query):
     await callback_query.answer(cache_time=3600)
 
 callback_lock = asyncio.Lock()
-@app.on_callback_query(callback_data(['nyaa_back', 'nyaa_next']))
 async def nyaa_callback(client, callback_query):
     message = callback_query.message
     message_identifier = (message.chat.id, message.id)
@@ -189,11 +185,11 @@ class TorrentSearch:
         self.command = command
         self.source = source.rstrip('/')
         self.RESULT_STR = result_str
-
-        app.add_handler(MessageHandler(self.find, filters.command([command, f'{self.command}@{bot.username}'])))
-        app.add_handler(CallbackQueryHandler(self.previous, filters.regex(f"{self.command}_previous")))
-        app.add_handler(CallbackQueryHandler(self.delete, filters.regex(f"{self.command}_delete")))
-        app.add_handler(CallbackQueryHandler(self.next, filters.regex(f"{self.command}_next")))
+        for a in app:
+            a.add_handler(MessageHandler(self.find, filters.command([command, f'{self.command}@{bot.username}'])))
+            a.add_handler(CallbackQueryHandler(self.previous, filters.regex(f"{self.command}_previous")))
+            a.add_handler(CallbackQueryHandler(self.delete, filters.regex(f"{self.command}_delete")))
+            a.add_handler(CallbackQueryHandler(self.next, filters.regex(f"{self.command}_next")))
         
     @staticmethod
     def format_magnet(string: str):
@@ -362,8 +358,6 @@ async def searchhelp(self, message):
 ┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 @FuZionX♦️━╹
 '''
     await message.reply(help_string, parse_mode=enums.ParseMode.HTML)
-    #sendMessage(help_string, context.bot, update)
-    
-    #& CustomFilters.mirror_owner_filter Not Used 😉
+
 SEARCHHELP_HANDLER = CommandHandler(BotCommands.TsHelpCommand, searchhelp, filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 dispatcher.add_handler(SEARCHHELP_HANDLER)

@@ -8,7 +8,7 @@
 # All Right Reserved 
 
 import logging
-
+from itertools import count
 from time import time
 from requests import get as rget
 from os import environ, path as opath
@@ -80,14 +80,23 @@ user_specific_config = {}
 PRE_DICT = {}
 CAP_DICT = {}
 IMDB_TEMPLATE = {}
+ANILIST_TEMPLATE = {}
 USER_THEMES = {}
 AVAILABLE_THEMES = {}
 __version__ = "2.7.11"
 
+TG_BOT_TOKEN, APP_ID, API_HASH = [], [], []
+
 # The Telegram API things >>>>>>>>>>>
-TG_BOT_TOKEN = getVar("TG_BOT_TOKEN", "")
-APP_ID = int(getVar("APP_ID", ""))
-API_HASH = getVar("API_HASH", "")
+for x in count():
+    bot_tok = getVar(f"TG_BOT_TOKEN{x + 1}", "")
+    tg_id = getVar(f"APP_ID{x + 1}", "")
+    tg_hash = getVar(f"API_HASH{x + 1}", "")
+    if bot_tok == "" or tg_id == "" or tg_hash == "":
+        break
+    TG_BOT_TOKEN.append(bot_tok)
+    APP_ID.append(int(tg_id))
+    API_HASH.append(tg_hash)
 OWNER_ID = int(getVar("OWNER_ID", ""))
 
 # Heroku & Restart Utils >>>>>>>>>>>
@@ -103,7 +112,7 @@ AUTH_CHANNEL += SUDO_USERS # Change Permissions Soon
 DOWNLOAD_LOCATION = "./Downloads"
 
 # Compulsory Variables >>>>>>>>
-for imp in ["TG_BOT_TOKEN", "APP_ID", "API_HASH", "OWNER_ID", "AUTH_CHANNEL"]:
+for imp in ["TG_BOT_TOKEN1", "APP_ID1", "API_HASH1", "OWNER_ID", "AUTH_CHANNEL"]:
     try:
         value = environ[imp]
         if not value:
@@ -219,6 +228,20 @@ DEF_IMDB_TEMPLATE = getVar("IMDB_TEMPLATE", '''<b>Title: </b> {title} [{year}]
 <b>Story Line: </b><code>{plot}</code>
 
 <a href="{url_cast}">Read More ...</a>''')
+DEF_ANILIST_TEMPLATE = getVar("ANILIST_TEMPLATE", """<b>{ro_title}</b>({na_title})
+<b>Format</b>: <code>{format}</code>
+<b>Status</b>: <code>{status}</code>
+<b>Start Date</b>: <code>{startdate}</code>
+<b>End Date</b>: <code>{enddate}</code>
+<b>Season</b>: <code>{season}</code>
+<b>Country</b>: {country}
+<b>Episodes</b>: <code>{episodes}</code>
+<b>Duration</b>: <code>{duration}</code>
+<b>Average Score</b>: <code>{avgscore}</code>
+<b>Genres</b>: {genres}
+<b>Hashtag</b>: {hashtag}
+<b>Studios</b>: {studios}
+<b>Description</b>: <i>{description}</i>""")
 
 #Telegraph Creds  >>>>>>>>>>>
 TGH_AUTHOR = getVar("TGH_AUTHOR ", "Tele-LeechX")
@@ -275,13 +298,18 @@ if opath.exists("rclone.conf") and not opath.exists("rclone_bak.conf"):
     LOGGER.info("[SUCCESS] rclone.conf BackUped to rclone_bak.conf!")
 
 # Pyrogram Client Intialization >>>>>>>>>>>
-app = Client("LeechBot", bot_token=TG_BOT_TOKEN, api_id=APP_ID, api_hash=API_HASH, workers=343)
+app = [ 
+    Client("LeechBot", bot_token=TG_BOT_TOKEN[0], api_id=APP_ID[0], api_hash=API_HASH[0], workers=343), 
+]
+for i in range(1, len(TG_BOT_TOKEN)):
+    app.append(Client(f"LeechBot-{i}", bot_token=TG_BOT_TOKEN[i], api_id=APP_ID[i], api_hash=API_HASH[i], workers=343))
+LOGGER.info(f"[Multiple Client Initiated] : {len(app)}")
 isUserPremium = False
 if len(STRING_SESSION) > 10:
     if userBot := Client(
         "Tele-UserBot",
-        api_id=APP_ID,
-        api_hash=API_HASH,
+        api_id=APP_ID1,
+        api_hash=API_HASH1,
         session_string=STRING_SESSION,
     ):
         userBot.start()
@@ -295,6 +323,6 @@ if len(STRING_SESSION) > 10:
         LOGGER.warning("[FAILED] Userbot Not Started. ReCheck Your STRING_SESSION, and Other Vars")
 else: LOGGER.info("Provide or ReGenerate Your STRING_SESSION Var")
 
-updater = Updater(token=TG_BOT_TOKEN)
+updater = Updater(token=TG_BOT_TOKEN[0])
 bot = updater.bot
 dispatcher = updater.dispatcher

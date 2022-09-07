@@ -11,7 +11,7 @@ from re import split as rsplit
 from pyrogram import enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 
-from tobrot import LOGGER, DB_URI, PRE_DICT, CAP_DICT, IMDB_TEMPLATE
+from tobrot import LOGGER, DB_URI, PRE_DICT, CAP_DICT, IMDB_TEMPLATE, ANILIST_TEMPLATE
 from tobrot.database.db_func import DatabaseManager
 from tobrot.bot_theme.themes import BotTheme
 from tobrot.plugins import getUserOrChaDetails
@@ -47,7 +47,7 @@ async def prefix_set(client, message):
     preNo = txt.split('no:')
     if len(preNo) > 1:
         preNo = preNo[1]
-        no = preNo.split('|')[0].strip()
+        no = preNo.split('|', 1)[0].strip()
     else:
         no = '0'
     preRep = txt.split('|')
@@ -118,6 +118,31 @@ async def template_set(client, message):
     if DB_URI:
         DatabaseManager().user_imdb(user_id_, template_)
         LOGGER.info(f"[DB] User : {user_id_} IMDB Template Saved to Database")
+    await lm.edit_text(((BotTheme(user_id_)).IMDB_MSG).format(
+            u_men = u_men,
+            uid = user_id_,
+            t = txt
+        ),
+        parse_mode=enums.ParseMode.HTML
+    )
+
+async def anilist_set(client, message):
+    '''  /anime_template command '''
+    lm = await message.reply_text("`Checking HTML Input ...`")
+    user_id_, u_men = getUserOrChaDetails(message)
+    tem_send = message.text.split(" ", 1)
+    reply_to = message.reply_to_message
+    if len(tem_send) > 1:
+        txt = tem_send[1]
+    elif reply_to is not None:
+        txt = reply_to.text
+    else:
+        txt = ""
+    ani_template_ = txt
+    ANILIST_TEMPLATE[user_id_] = ani_template_
+    #if DB_URI:
+    #    DatabaseManager().user_anilist(user_id_, ani_template_)
+    #    LOGGER.info(f"[DB] User : {user_id_} AniList Anime Template Saved to Database")
     await lm.edit_text(((BotTheme(user_id_)).IMDB_MSG).format(
             u_men = u_men,
             uid = user_id_,

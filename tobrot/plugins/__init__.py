@@ -4,9 +4,15 @@ from shutil import rmtree
 from re import match as rmatch
 from urllib.parse import unquote, quote
 
-from tobrot import DOWNLOAD_LOCATION, LOGGER
+from tobrot import DOWNLOAD_LOCATION, LOGGER, app
 from tobrot.helper_funcs.display_progress import humanbytes
 from typing import Tuple
+
+def getUserName():
+    UserNames = []
+    for a in app:
+        UserNames.append((a.get_me()).username)
+    return UserNames
 
 async def runcmd(cmd: str) -> Tuple[str, str, int, int]:
     """ run command in terminal """

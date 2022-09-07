@@ -117,7 +117,6 @@ async def user_settings(client, message):
     await to_edit.delete()
     await message.reply_photo(photo = 'https://te.legra.ph/file/a3dea655deb2a6f213813.jpg', caption=__text, parse_mode=enums.ParseMode.HTML, reply_markup=btn)
 
-@app.on_callback_query()
 async def settings_callback(client, query: CallbackQuery):
     if query.data.startswith("showthumb"):
         getData = (query.data).split(" ")
