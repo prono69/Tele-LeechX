@@ -14,7 +14,6 @@ from requests import get as rget
 from asyncio import sleep as asleep
 from urllib.parse import unquote, quote
 
-from telegram import ParseMode
 from pyrogram import enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -83,7 +82,7 @@ async def incoming_message_f(client, message):
         if not txtCancel:
             if LEECH_LOG:
                 text__ += endText
-                logs_msg = await client.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                logs_msg = await client.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=enums.ParseMode.HTML, disable_web_page_preview=True)
             LOGGER.info(f"Leech Started : {tag_me}")
 
     i_m_sefg = await message.reply_text("<code>Processing ... 🔄</code>", quote=True)
