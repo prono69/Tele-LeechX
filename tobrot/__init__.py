@@ -303,13 +303,14 @@ app = [
 ]
 for i in range(1, len(TG_BOT_TOKEN)):
     app.append(Client(f"LeechBot-{i}", bot_token=TG_BOT_TOKEN[i], api_id=APP_ID[i], api_hash=API_HASH[i], workers=343))
-LOGGER.info(f"[Multiple Client Initiated] : {len(app)}")
+if len(app) > 1:
+    LOGGER.info(f"[Multi Client Initiated] Total Bots : {len(app)}")
 isUserPremium = False
 if len(STRING_SESSION) > 10:
     if userBot := Client(
         "Tele-UserBot",
-        api_id=APP_ID1,
-        api_hash=API_HASH1,
+        api_id=APP_ID[0],
+        api_hash=API_HASH[0],
         session_string=STRING_SESSION,
     ):
         userBot.start()
