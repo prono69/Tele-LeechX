@@ -294,14 +294,15 @@ if __name__ == "__main__":
         a.add_handler(MessageHandler(user_settings, filters=filters.command([f"currsettings", f"currsettings@{username}"]) & filters.chat(chats=AUTH_CHANNEL)))
         a.add_handler(MessageHandler(get_anime_query, filters=filters.command(["ani", f"ani@{username}"]) & filters.chat(chats=AUTH_CHANNEL)))
         a.add_handler(MessageHandler(anilist_set, filters=filters.command(["anime_template", f"anime_template@{username}"]) & filters.chat(chats=AUTH_CHANNEL)))
-        a.add_handler(CallbackQueryHandler(button))
-        a.add_handler(CallbackQueryHandler(anilist_callbackquery))
-        a.add_handler(CallbackQueryHandler(imdb_callback))
-        a.add_handler(CallbackQueryHandler(settings_callback))
         a.add_handler(MessageHandler(nyaa_search, filters=filters.command(['nyaasi', f'nyaasi@{username}']) & filters.chat(chats=AUTH_CHANNEL)))
         a.add_handler(MessageHandler(nyaa_search_sukebei, filters=filters.command(['sukebei', f'sukebei@{username}']) & filters.chat(chats=AUTH_CHANNEL)))
-        a.add_handler(CallbackQueryHandler(nyaa_nop))
-        a.add_handler(CallbackQueryHandler(nyaa_callback))
+
+        a.add_handler(CallbackQueryHandler(anilist_callbackquery, filters=filters.regex(pattern="^(tags|stream|reviews|relations|characters|home)")))
+        a.add_handler(CallbackQueryHandler(imdb_callback, filters=filters.regex(pattern="^imdb")))
+        a.add_handler(CallbackQueryHandler(settings_callback, filters=filters.regex(pattern="^showthumb")))
+        a.add_handler(CallbackQueryHandler(nyaa_nop, filters=filters.regex(pattern="nyaa_nop")))
+        a.add_handler(CallbackQueryHandler(nyaa_callback, filters=filters.regex(pattern="nyaa_back|nyaa_next")))
+        a.add_handler(CallbackQueryHandler(button))
 
     logging.info(r'''
 ________    ______           ______                 ______ ____  __

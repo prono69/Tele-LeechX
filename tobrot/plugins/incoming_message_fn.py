@@ -18,7 +18,7 @@ from telegram import ParseMode
 from pyrogram import enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from tobrot import DOWNLOAD_LOCATION, CLONE_COMMAND_G, GLEECH_COMMAND, GLEECH_UNZIP_COMMAND, GLEECH_ZIP_COMMAND, LOGGER, GPYTDL_COMMAND, STATUS_COMMAND, UPDATES_CHANNEL, LEECH_LOG, BOT_PM, EXCEP_CHATS, bot, FSUB_CHANNEL, USER_DTS
+from tobrot import DOWNLOAD_LOCATION, CLONE_COMMAND_G, GLEECH_COMMAND, GLEECH_UNZIP_COMMAND, GLEECH_ZIP_COMMAND, LOGGER, GPYTDL_COMMAND, STATUS_COMMAND, UPDATES_CHANNEL, LEECH_LOG, BOT_PM, EXCEP_CHATS, app, FSUB_CHANNEL, USER_DTS
 from tobrot import bot, EDIT_SLEEP_TIME_OUT
 from tobrot.helper_funcs.display_progress import humanbytes, TimeFormatter
 from tobrot.helper_funcs.bot_commands import BotCommands
@@ -140,7 +140,7 @@ async def incoming_message_f(client, message):
         is_unzip = False
         bot_unzip, bot_zip, cloud, cloud_zip, cloud_unzip = [], [], [], [], []
         for a in app:
-            ubot = (a.get_me()).username
+            ubot = (await a.get_me()).username
             bot_unzip.append(f"{BotCommands.ExtractCommand}@{ubot}".lower())
             bot_zip.append(f"{BotCommands.ArchiveCommand}@{ubot}".lower())
             cloud.append(f"{GLEECH_COMMAND}@{ubot}".lower())
