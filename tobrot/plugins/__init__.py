@@ -9,10 +9,7 @@ from tobrot.helper_funcs.display_progress import humanbytes
 from typing import Tuple
 
 def getUserName():
-    UserNames = []
-    for a in app:
-        UserNames.append((a.get_me()).username)
-    return UserNames
+    return [(a.get_me()).username for a in app]
 
 async def runcmd(cmd: str) -> Tuple[str, str, int, int]:
     """ run command in terminal """
