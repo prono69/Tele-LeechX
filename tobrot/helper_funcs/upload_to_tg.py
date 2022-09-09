@@ -17,7 +17,6 @@ from functools import partial
 from pathlib import Path
 from requests import utils, get as rget
 
-from telegram import ParseMode
 from pyrogram import enums
 from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
@@ -27,7 +26,8 @@ from pyrogram.errors import FloodWait, MessageNotModified
 from pyrogram.types import InputMediaAudio, InputMediaDocument, InputMediaVideo
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from tobrot import DESTINATION_FOLDER, DOWNLOAD_LOCATION, EDIT_SLEEP_TIME_OUT, INDEX_LINK, VIEW_LINK, LOGGER, TG_MAX_FILE_SIZE, UPLOAD_AS_DOC, CAP_STYLE, CUSTOM_CAPTION, user_specific_config, bot, LEECH_LOG, EXCEP_CHATS, EX_LEECH_LOG, BOT_PM, TG_PRM_FILE_SIZE, PRM_USERS, PRM_LOG, isUserPremium, AUTH_CHANNEL
+from tobrot import DESTINATION_FOLDER, DOWNLOAD_LOCATION, EDIT_SLEEP_TIME_OUT, INDEX_LINK, VIEW_LINK, LOGGER, TG_MAX_FILE_SIZE, UPLOAD_AS_DOC, \
+                   CAP_STYLE, CUSTOM_CAPTION, user_specific_config, bot, LEECH_LOG, EXCEP_CHATS, EX_LEECH_LOG, BOT_PM, TG_PRM_FILE_SIZE, PRM_USERS, PRM_LOG, isUserPremium, AUTH_CHANNEL, UPDATES_CHANNEL
 if isUserPremium:
     from tobrot import userBot
 from tobrot.bot_theme.themes import BotTheme
@@ -321,18 +321,14 @@ VIDEO_SUFFIXES = ("MKV", "MP4", "MOV", "WMV", "3GP", "MPG", "WEBM", "AVI", "FLV"
 AUDIO_SUFFIXES = ("MP3", "M4A", "M4B", "FLAC", "WAV", "AIF", "OGG", "AAC", "DTS", "MID", "AMR", "MKA")
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "WEBP", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
 
-async def upload_single_file(
-    message, local_file_name, caption_str, from_user, client, edit_media, yt_thumb, prm_atv: bool
-):
+async def upload_single_file(message, local_file_name, caption_str, from_user, client, edit_media, yt_thumb, prm_atv: bool):
     idc = False
     base_file_name = opath.basename(local_file_name)
     await asleep(EDIT_SLEEP_TIME_OUT)
     local_file_name = str(Path(local_file_name).resolve())
     sent_message = None
     start_time = time()
-    thumbnail_location = opath.join(
-        DOWNLOAD_LOCATION, "thumbnails", str(from_user) + ".jpg"
-    )
+    thumbnail_location = f"{DOWNLOAD_LOCATION}/thumbnails/{from_user}.jpg"
 
     __uploadAsDoc = user_specific_config.get(from_user, False)
         
@@ -345,7 +341,7 @@ async def upload_single_file(
         prm_atv = False
 
     global EXCEP_CHATS
-    if (not EXCEP_CHATS):
+    if (not EXCEP_CHATS) and (not LEECH_LOG):
         EXCEP_CHATS = AUTH_CHANNEL
         LOGGER.info("[IDLE] Switching AUTH_CHANNEL to EXCEP_CHATS")
 
@@ -395,12 +391,12 @@ async def upload_single_file(
                 )
                 LOGGER.info("UserBot Upload : Completed")
             try:
-                sent_message = bot.send_document(
+                sent_message = await client.send_document(
                     chat_id=message.chat.id,
                     document=sent_msg.document.file_id,
                     thumb=thumb,
                     caption=caption_str,
-                    parse_mode=ParseMode.HTML,
+                    parse_mode=enums.ParseMode.HTML,
                     disable_notification=True,
                     reply_to_message_id=message.id
                 )
@@ -410,28 +406,28 @@ async def upload_single_file(
                     sent_message = await sent_msg.copy(chat_id = message.chat.id, reply_to_message_id=message.id)
                 except Exception as er:
                     LOGGER.info(f"[4GB UPLOAD USER] : {er}")
-                    sent_message = bot.copy_message(
+                    sent_message = await client.copy_message(
                         chat_id=message.chat.id,
                         from_chat_id=int(PRM_LOG),
                         message_id=sent_msg.id,
                         caption=caption_str,
-                        parse_mode=ParseMode.HTML,
+                        parse_mode=enums.ParseMode.HTML,
                         reply_to_message_id=message.id
                     )
                     idc = True
             LOGGER.info("Bot 4GB Upload : Completed")
         else:
-            sent_message = await bot.send_document(
+            sent_message = await client.send_document(
                 chat_id=int(LEECH_LOG),
                 document=local_file_name,
                 thumb=thumb,
-                caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 @FXTorrentz ♨️",
-                parse_mode=ParseMode.HTML,
+                caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL} ♨️",
+                parse_mode=enums.ParseMode.HTML,
                 disable_notification=True,
             )
             if BOT_PM:
                 try:
-                  bot.send_document(
+                  await client.send_document(
                       chat_id=from_user, 
                       document=sent_message.document.file_id,
                       thumb=thumb,
@@ -442,12 +438,12 @@ async def upload_single_file(
                    LOGGER.error(f"Failed To Send Document in User PM:\n{err}")
             if EX_LEECH_LOG:
                 try:
-                    for i in EX_LEECH_LOG:
-                        bot.send_document(
-                            chat_id=i, 
+                    for chat_id in EX_LEECH_LOG:
+                        await client.send_document(
+                            chat_id=int(chat_id), 
                             document=sent_message.document.file_id,
                             thumb=thumb,
-                            caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 @FXTorrentz ♨️",
+                            caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL} ♨️",
                             parse_mode=enums.ParseMode.HTML
                         )
                 except Exception as err:
@@ -532,7 +528,6 @@ async def upload_single_file(
                             duration=duration,
                             supports_streaming=True,
                         )
-                        # quote=True,
                     )
                 else:
                     if str(message.chat.id) in str(EXCEP_CHATS) and not prm_atv:
@@ -574,7 +569,7 @@ async def upload_single_file(
                             )
                             LOGGER.info("UserBot Upload : Completed")
                         try:
-                            sent_message = bot.send_video(
+                            sent_message = await client.send_video(
                                 chat_id=message.chat.id,
                                 video=sent_msg.video.file_id,
                                 thumb=thumb,
@@ -583,7 +578,7 @@ async def upload_single_file(
                                 height=height,
                                 supports_streaming=True,
                                 caption=caption_str,
-                                parse_mode=ParseMode.HTML,
+                                parse_mode=enums.ParseMode.HTML,
                                 disable_notification=True,
                                 reply_to_message_id=message.id
                             )
@@ -593,21 +588,21 @@ async def upload_single_file(
                                 sent_message = await sent_msg.copy(chat_id = message.chat.id, reply_to_message_id=message.id)
                             except Exception as er:
                                 LOGGER.info(f"[4GB UPLOAD USER] : {er}")
-                                sent_message = bot.copy_message(
+                                sent_message = await client.copy_message(
                                     chat_id=message.chat.id,
                                     from_chat_id=int(PRM_LOG),
                                     message_id=sent_msg.id,
                                     caption=caption_str,
-                                    parse_mode=ParseMode.HTML,
+                                    parse_mode=enums.ParseMode.HTML,
                                     reply_to_message_id=message.id
                                 )
                                 idc = True
                         LOGGER.info("Bot 4GB Upload : Completed")
                     else:
-                        sent_message = await message.sent_video(
-                            chat_id=LEECH_LOG,
+                        sent_message = await client.send_video(
+                            chat_id=int(LEECH_LOG),
                             video=local_file_name,
-                            caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 @FXTorrentz ♨️",
+                            caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL} ♨️",
                             parse_mode=enums.ParseMode.HTML,
                             duration=duration,
                             width=width,
@@ -623,7 +618,7 @@ async def upload_single_file(
                          )
                         if BOT_PM:
                             try:
-                                bot.send_video(
+                                await client.send_video(
                                     chat_id=from_user, 
                                     video=sent_message.video.file_id,
                                     thumb=thumb,
@@ -635,13 +630,13 @@ async def upload_single_file(
                                 LOGGER.error(f"Failed To Send Video in User PM:\n{err}")
                         if EX_LEECH_LOG:
                             try:
-                                for i in EX_LEECH_LOG:
-                                    bot.send_video(
-                                        chat_id=i, 
+                                for chat_id in EX_LEECH_LOG:
+                                    await client.send_video(
+                                        chat_id=int(chat_id), 
                                         video=sent_message.video.file_id,
                                         thumb=thumb,
                                         supports_streaming=True,
-                                        caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 @FXTorrentz ♨️",
+                                        caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL} ♨️",
                                         parse_mode=enums.ParseMode.HTML
                                     )
                             except Exception as err:
@@ -649,6 +644,7 @@ async def upload_single_file(
                 if thumb is not None:
                     oremove(thumb)
             elif local_file_name.upper().endswith(AUDIO_SUFFIXES):
+
                 metadata = extractMetadata(createParser(local_file_name))
                 duration = 0
                 title = ""
@@ -659,6 +655,7 @@ async def upload_single_file(
                     title = metadata.get("title")
                 if metadata.has("artist"):
                     artist = metadata.get("artist")
+
                 thumb_image_path = None
                 if opath.isfile(thumbnail_location):
                     thumb_image_path = await copy_file(
@@ -668,7 +665,6 @@ async def upload_single_file(
                 thumb = None
                 if thumb_image_path is not None and opath.isfile(thumb_image_path):
                     thumb = thumb_image_path
-                # send audio
                 if edit_media and message.photo:
                     await asleep(EDIT_SLEEP_TIME_OUT)
                     sent_message = await message.edit_media(
@@ -683,42 +679,60 @@ async def upload_single_file(
                         )
                     )
                 else:
-                    sent_message = await message.reply_audio(
-                        audio=local_file_name,
-                        caption=caption_str,
-                        parse_mode=enums.ParseMode.HTML,
-                        duration=duration,
-                        performer=artist,
-                        title=title,
-                        thumb=thumb,
-                        disable_notification=True,
-                        progress=prog.progress_for_pyrogram,
-                        progress_args=(
-                            ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = opath.basename(local_file_name)),
-                            start_time,
-                        ),
-                    )
-                    if BOT_PM:
-                        try:
-                            bot.send_audio(
-                                chat_id=from_user, 
-                                audio=sent_message.audio.file_id,
-                                thumb=thumb,
-                                caption=caption_str,
-                            )
-                        except Exception as err:
-                            LOGGER.error(f"Failed To Send Audio in User PM:\n{err}")
-                    if LEECH_LOG:
-                        try:
-                            for i in LEECH_LOG:
-                                bot.send_audio(
-                                    chat_id=i, 
-                                    document=sent_message.audio.file_id,
+                    if str(message.chat.id) in str(EXCEP_CHATS):
+                        sent_message = await message.reply_audio(
+                            audio=local_file_name,
+                            caption=caption_str,
+                            parse_mode=enums.ParseMode.HTML,
+                            duration=duration,
+                            performer=artist,
+                            title=title,
+                            thumb=thumb,
+                            disable_notification=True,
+                            progress=prog.progress_for_pyrogram,
+                            progress_args=(
+                                ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = opath.basename(local_file_name)),
+                                start_time,
+                            ),
+                        )
+                    else:
+                        sent_message = await client.send_audio(
+                            chat_id=int(LEECH_LOG),
+                            audio=local_file_name,
+                            caption=caption_str,
+                            parse_mode=enums.ParseMode.HTML,
+                            duration=duration,
+                            performer=artist,
+                            title=title,
+                            thumb=thumb,
+                            disable_notification=True,
+                            progress=prog.progress_for_pyrogram,
+                            progress_args=(
+                                ((BotTheme(from_user)).START_UPLOAD_MSG).format(filename = opath.basename(local_file_name)),
+                                start_time,
+                            ),
+                        )
+                        if BOT_PM:
+                            try:
+                                await client.send_audio(
+                                    chat_id=from_user, 
+                                    audio=sent_message.audio.file_id,
                                     thumb=thumb,
-                                    caption=f"<code>{base_file_name}</code>",
+                                    caption=caption_str,
                                 )
-                        except Exception as err:
-                            LOGGER.error(f"Failed To Send Audio in User PM:\n{err}")
+                            except Exception as err:
+                                LOGGER.error(f"Failed To Send Audio in User PM:\n{err}")
+                        if EX_LEECH_LOG:
+                            try:
+                                for chat_id in EX_LEECH_LOG:
+                                    await client.send_audio(
+                                        chat_id=int(chat_id), 
+                                        document=sent_message.audio.file_id,
+                                        thumb=thumb,
+                                        caption=f"<code>{base_file_name}</code>",
+                                    )
+                            except Exception as err:
+                                LOGGER.error(f"Failed To Send Audio in User PM:\n{err}")
                 if thumb is not None:
                     oremove(thumb)
             else:
@@ -755,11 +769,11 @@ async def upload_single_file(
                             ),
                         )
                     else:
-                        sent_message = await bot.send_document(
-                            chat_id=LEECH_LOG,
+                        sent_message = await client.send_document(
+                            chat_id=int(LEECH_LOG),
                             document=local_file_name,
                             thumb=thumb,
-                            caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 @FXTorrentz ♨️",
+                            caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL} ♨️",
                             parse_mode=enums.ParseMode.HTML,
                             disable_notification=True,
                             progress=prog.progress_for_pyrogram,
@@ -770,7 +784,7 @@ async def upload_single_file(
                         )
                         if BOT_PM:
                             try:
-                                bot.send_document(
+                                await client.send_document(
                                     chat_id=from_user, 
                                     document=sent_message.document.file_id,
                                     thumb=thumb,
@@ -781,12 +795,12 @@ async def upload_single_file(
                                 LOGGER.error(f"Failed To Send Document in User PM:\n{err}")
                         if EX_LEECH_LOG:
                             try:
-                                for i in EX_LEECH_LOG:
-                                    bot.send_document(
-                                        chat_id=i, 
+                                for chat_id in EX_LEECH_LOG:
+                                    await client.send_document(
+                                        chat_id=int(chat_id), 
                                         document=sent_message.document.file_id,
                                         thumb=thumb,
-                                        caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 @FXTorrentz ♨️",
+                                        caption=f"<code>{base_file_name}</code>\n\n♨️ 𝕌𝕡𝕝𝕠𝕒𝕕𝕖𝕕 𝔹𝕪 {UPDATES_CHANNEL} ♨️",
                                         parse_mode=enums.ParseMode.HTML
                                     )
                             except Exception as err:

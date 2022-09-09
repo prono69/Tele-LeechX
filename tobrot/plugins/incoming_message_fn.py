@@ -29,7 +29,7 @@ from tobrot.helper_funcs.extract_link_from_message import extract_link
 from tobrot.helper_funcs.upload_to_tg import upload_to_tg
 from tobrot.helper_funcs.youtube_dl_extractor import extract_youtube_dl_formats
 from tobrot.helper_funcs.ytplaylist import yt_playlist_downg
-from tobrot.plugins import getDetails, getUserOrChaDetails
+from tobrot.plugins import getDetails, getUserOrChaDetails, getUserName
 from tobrot.plugins.force_sub_handler import handle_force_sub
 from tobrot.bot_theme.themes import BotTheme
 
@@ -60,29 +60,31 @@ async def incoming_message_f(client, message):
     if BOT_PM and message.chat.type != enums.ChatType.PRIVATE and str(message.chat.id) not in str(EXCEP_CHATS):
         LOGGER.info("[Bot PM] Initiated")
         try:
-            msg1 = f'Leech Started !!\n'
+            msg1 = f'Leech Started !!'
             send = await client.send_message(message.from_user.id, text=msg1)
-            send.delete()
+            await send.delete()
         except Exception as e:
             LOGGER.warning(e)
             uname = f'<a href="tg://user?id={g_id}">{tag_me}</a>'
+            username = await getUserName()
             button_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⚡️ Click Here to Start Me ⚡️", url=f"http://t.me/{username[0]}")] # Broken, Multi Client No Solution 
+                    [InlineKeyboardButton("⚡️ Click Here to Start Me ⚡️", url=f"http://t.me/{username[0]}")]
                 ])
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't Started me in PM (Private Chat) yet.</b>\n\n" \
                         f"From Now on, Links and Leeched Files in PM and Log Channel Only !!"
             message = await message.reply_text(text=startwarn, parse_mode=enums.ParseMode.HTML, quote=True, reply_markup=button_markup)
             return
-
+    rpy_mssg_id = None
     if USER_DTS:
         text__, txtCancel = getDetails(client, message, 'Leech')
         link_text = await message.reply_text(text=text__, parse_mode=enums.ParseMode.HTML, quote=True, disable_web_page_preview=True)
-
+        
         endText = f"\n📬 <b>Source :</b> <a href='{message.link}'>Click Here</a>\n\n#LeechStart #FXLogs"
         if not txtCancel:
             if LEECH_LOG:
                 text__ += endText
-                logs_msg = await client.send_message(chat_id=LEECH_LOG, text=text__, parse_mode=enums.ParseMode.HTML, disable_web_page_preview=True)
+                logs_msg = await client.send_message(chat_id=int(LEECH_LOG), text=text__, parse_mode=enums.ParseMode.HTML, disable_web_page_preview=True)
+                rpy_mssg_id = logs_msg.id
             LOGGER.info(f"Leech Started : {tag_me}")
 
     i_m_sefg = await message.reply_text("<code>Processing ... 🔄</code>", quote=True)
@@ -172,6 +174,7 @@ async def incoming_message_f(client, message):
             is_file,
             message,
             client,
+            rpy_mssg_id
         )
         if not sagtus:
             await i_m_sefg.edit_text(err_message)

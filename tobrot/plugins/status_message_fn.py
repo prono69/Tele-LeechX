@@ -114,7 +114,9 @@ async def status_message_f(client, message):
             gid_dict[chat_id].append(mess_id)
 
     prev_mess = "FXTorrentz"
-    await message.delete()
+    try:
+        await message.delete()
+    except: pass
     while True:
         downloads = aria_i_p.get_downloads()
         msg = ""
@@ -136,7 +138,7 @@ async def status_message_f(client, message):
                 is_file = file.seeder
                 curTime = time()
                 msg += ((BotTheme(u_id_)).STATUS_MSG_1).format(
-                    mess_link = umess.link,
+                    mess_link = umess.link or '',
                     file_name = downloading_dir_name,
                     progress = prog,
                     prog_string = file.progress_string(),
@@ -218,7 +220,7 @@ async def cancel_message_f(client, message):
         aria_i_p = await aria_start()
         gidData = (message.text).split("_")
         g_id = gidData[1].strip()
-        UserNames = getUserName()
+        UserNames = await getUserName()
         for i in range(0, len(UserNames)):
             if g_id.endswith(f'@{UserNames[i]}'):
                 g_id = g_id.replace(f'@{UserNames[i]}', '')

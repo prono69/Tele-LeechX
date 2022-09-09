@@ -249,7 +249,8 @@ TGH_AUTHOR_URL = getVar("TGH_AUTHOR_URL", "https://t.me/FXTorrentz")
 
 #Bot Command [Bot PM & Log Channel]  >>>>>>>>>>>
 LEECH_LOG = getVar("LEECH_LOG", "")
-EX_LEECH_LOG = getVar("EX_LEECH_LOG", "")
+LEECH_INVITE = getVar("LEECH_INVITE", "False")
+EX_LEECH_LOG = [int(chats) if (' ' not in getVar('EX_LEECH_LOG', '')) else int(chats) for chats in getVar('EX_LEECH_LOG', '').split()]
 EXCEP_CHATS = getVar("EXCEP_CHATS", "")
 BOT_PM = getVar("BOT_PM", False)
 
@@ -322,8 +323,6 @@ if len(STRING_SESSION) > 10:
             LOGGER.info("[SUCCESS] Initiated UserBot : Non-Premium Mode. Add Premium Account StringSession to Use 4GB Upload. ")
     else:
         LOGGER.warning("[FAILED] Userbot Not Started. ReCheck Your STRING_SESSION, and Other Vars")
-else: LOGGER.info("Provide or ReGenerate Your STRING_SESSION Var")
 
 updater = Updater(token=TG_BOT_TOKEN[0])
 bot = updater.bot
-dispatcher = updater.dispatcher

@@ -24,7 +24,7 @@ from pyrogram.parser import html as pyrogram_html
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 
-from tobrot import app, dispatcher, bot, LOGGER 
+from tobrot import app, bot, LOGGER 
 from tobrot.helper_funcs.bot_commands import BotCommands
 from tobrot.helper_funcs.filters import CustomFilters
 
@@ -357,7 +357,4 @@ async def searchhelp(self, message):
 ┃
 ┗━♦️ℙ𝕠𝕨𝕖𝕣𝕖𝕕 𝔹𝕪 @FuZionX♦️━╹
 '''
-    await message.reply(help_string, parse_mode=enums.ParseMode.HTML)
-
-SEARCHHELP_HANDLER = CommandHandler(BotCommands.TsHelpCommand, searchhelp, filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
-dispatcher.add_handler(SEARCHHELP_HANDLER)
+    await message.reply(text=help_string, parse_mode=enums.ParseMode.HTML)

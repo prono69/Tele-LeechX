@@ -7,31 +7,22 @@
 # This is Part of < https://github.com/5MysterySD/Tele-LeechX >
 # All Right Reserved
 
-import sys
+import sys, aria2p
+from datetime import datetime, timedelta
 from urllib.request import urlretrieve 
 from asyncio import create_subprocess_exec, subprocess, sleep as asleep
 from os import path as opath, rename as orename, walk as owalk
 from time import sleep as tsleep, time
-from aria2p import API as ariaAPI, Client as ariClient, client as aria2pclient
+from aria2p import API as ariaAPI, Client as ariClient
 from subprocess import check_output
 from natsort import natsorted
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 from pyrogram.errors import FloodWait, MessageNotModified
-from tobrot import (
-    ARIA_TWO_STARTED_PORT,
-    CUSTOM_FILE_NAME as CUSTOM_PREFIX,
-    EDIT_SLEEP_TIME_OUT,
-    LOGGER,
-    UPDATES_CHANNEL, 
-    MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START,
-    CLONE_COMMAND_G,
-    user_settings_lock,
-    user_settings
-)
-from tobrot.helper_funcs.create_compressed_archive import (
-    create_archive,
-    get_base_name,
-    unzip_me,
-)
+
+from tobrot import ARIA_TWO_STARTED_PORT, CUSTOM_FILE_NAME as CUSTOM_PREFIX, EDIT_SLEEP_TIME_OUT, LOGGER, UPDATES_CHANNEL, \
+                   MAX_TIME_TO_WAIT_FOR_TORRENTS_TO_START, CLONE_COMMAND_G, user_settings_lock, user_settings, LEECH_LOG, \
+                   BOT_PM, LEECH_INVITE, EXCEP_CHATS
+from tobrot.helper_funcs.create_compressed_archive import create_archive, get_base_name, unzip_me
 from tobrot.helper_funcs.upload_to_tg import upload_to_gdrive, upload_to_tg
 from tobrot.helper_funcs.download import download_tg
 from tobrot.bot_theme.themes import BotTheme
@@ -246,6 +237,7 @@ async def call_apropriate_function(
     is_file,
     user_message,
     client,
+    rpy_mssg_id
 ):
     if not is_file:
 
@@ -275,7 +267,7 @@ async def call_apropriate_function(
         await asleep(1)
         try:
             file = aria_instance.get_download(err_message)
-        except aria2pclient.ClientException as ee:
+        except aria2p.client.ClientException as ee:
             LOGGER.error(ee)
             return True, None
         to_upload_file = file.name
@@ -341,7 +333,7 @@ async def call_apropriate_function(
                 for key_f_res_se in final_response:
                     local_file_name = key_f_res_se
                     message_id = final_response[key_f_res_se]
-                    channel_id = str(sent_message_to_update_tg_p.chat.id)[4:]
+                    channel_id = str(LEECH_LOG)[4:] if LEECH_LOG and str(user_message.chat.id) not in str(EXCEP_CHATS) else str(sent_message_to_update_tg_p.chat.id)[4:]
                     private_link = f"https://t.me/c/{channel_id}/{message_id}"
                     message_to_send += ((BotTheme(u_id)).SINGLE_LIST_FILES_MSG).format(
                         private_link = private_link,
@@ -349,21 +341,30 @@ async def call_apropriate_function(
                     )
                     if len(mention_req_user.encode('utf-8') + message_to_send.encode('utf-8') + message_credits.encode('utf-8')) > 4000:
                         tsleep(1.5)
-                        await user_message.reply_text(
-                            text=mention_req_user + message_to_send + message_credits, quote=True, disable_web_page_preview=True
-                        )
+                        await __sendSpecificLogMsg(client, user_message, mention_req_user, message_to_send, message_credits, rpy_mssg_id)
                         message_to_send = ""
                 if message_to_send != "":
                     tsleep(1.5)
-                    await user_message.reply_text(
-                        text=mention_req_user + message_to_send + message_credits, quote=True, disable_web_page_preview=True
-                    )
+                    await __sendSpecificLogMsg(client, user_message, mention_req_user, message_to_send, message_credits, rpy_mssg_id)
             except Exception as go:
                 LOGGER.error(go)
     return True, None
 
+async def __sendSpecificLogMsg(client, user_message, req, send, cred, rpy_mssg_id):
+    if LEECH_LOG and str(user_message.chat.id) not in str(EXCEP_CHATS):
+        log_txt = "┃ <b>🖨 Requested Leeched File are Sent to User PM.</b>\n"
+        if BOT_PM: log_txt += "┃ <b>♻️ File(s) are Uploaded on Leech Log Channel, Check Down View.</b>\n"
+        leech_msg = await client.send_message(chat_id=int(LEECH_LOG), text=req + send + cred, disable_web_page_preview=True, reply_to_message_id=rpy_mssg_id, parse_mode=enums.ParseMode.HTML)
+        inbtns = [
+            [InlineKeyboardButton("Gᴇᴛ Lᴇᴇᴄʜᴇᴅ Fɪʟᴇs", url=leech_msg.link)]
+        ]
+        if LEECH_INVITE.lower() == "true":
+            leech_link = await client.create_chat_invite_link(chat_id=int(LEECH_LOG), name=f"{UPDATES_CHANNEL} Tele-LeechX Invite Link", member_limit=10, expire_date=datetime.now() + timedelta(days=1))
+            inbtns[0].insert(1, InlineKeyboardButton("Jᴏɪɴ Lᴇᴇᴄʜ Lᴏɢ", url=leech_link.invite_link))
+        await user_message.reply_text(text=req + log_txt + cred, disable_web_page_preview=True, quote=True, parse_mode=enums.ParseMode.HTML, reply_markup=InlineKeyboardMarkup(inbtns))
+    else:
+        await user_message.reply_text(text=req + send + cred, disable_web_page_preview=True, quote=True, parse_mode=enums.ParseMode.HTML)
 
-# https://github.com/jaskaranSM/UniBorg/blob/6d35cf452bce1204613929d4da7530058785b6b1/stdplugins/aria.py#L136-L164
 async def check_progress_for_dl(aria2, gid, event, previous_message, user_message):
     while True:
         try:
@@ -398,7 +399,7 @@ async def check_progress_for_dl(aria2, gid, event, previous_message, user_messag
                         size = file.total_length_string()
                     ))
                 return
-        except aria2pclient.ClientException:
+        except aria2p.client.ClientException:
             await event.reply(f"<i>⛔ Download Cancelled ⛔</i> :\n<code>{file.name} ({file.total_length_string()})</code>", quote=True)
             return
         except MessageNotModified as ep:
